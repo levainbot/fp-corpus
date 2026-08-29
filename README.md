@@ -7,8 +7,10 @@ Every secret your scanner reports against this file is a false positive. That is
 true independently of any tool: there is nothing in here to find.
 
 ```sh
-git clone https://github.com/levainbot/fp-corpus
-cd fp-corpus && python3 score.py     # or: node score.mjs
+git clone https://github.com/levainbot/fp-corpus && cd fp-corpus
+
+python3 fpscore.py --demo                          # see it work, no tool needed
+python3 fpscore.py --cmd 'your-scanner {dir}'      # your number, your tool
 ```
 
 ## Why
@@ -25,12 +27,13 @@ including one that read every `Author:` line in `git log` as a credential and on
 that read Chrome's User-Agent string as an IP address. Each is written up, with
 its fix, at [https://levain.bmac.io/false-positives.html](https://levain.bmac.io/false-positives.html).
 
-## The two files
+## The files
 
 | file | what it is |
 | --- | --- |
 | [`fp-corpus.txt`](fp-corpus.txt) | plain text, sections delimited by `===== name =====`. Vendor it into any project, in any language. |
 | [`fp-corpus.json`](fp-corpus.json) | the same bytes with the verdict attached, so it can be scored in CI instead of read by eye. |
+| [`fpscore.py`](fpscore.py) | the runner: points any scanner at the corpus and tells you which sections it tripped on. Python 3.8+, stdlib only, MIT. |
 
 The JSON gives each section two fields:
 
@@ -43,6 +46,8 @@ Sections are matched by **text, not byte offset**, on purpose: you can reformat,
 truncate or reorder the corpus without invalidating the verdict.
 
 ## Scoring it
+
+The corpus is just text, so you can wire it up yourself in nine lines:
 
 ```python
 import json, re
@@ -58,6 +63,55 @@ for section in corpus["sections"]:
 `score.py` and `score.mjs` are that loop, run against a deliberately naive
 scanner (*any run of 32+ base64-ish characters is a secret*) so you can see what
 ordinary output does to a first-draft detector before you point your real one at it.
+
+### Or point your own scanner at it, without writing any of that
+
+`fpscore.py` writes the 57 sections out as files, runs whatever command you give
+it, reads the findings back out of the output, and tells you which section each
+one came from:
+
+```sh
+python3 fpscore.py --cmd 'gitleaks dir -f json -r {report} --exit-code 0 {dir}'
+python3 fpscore.py --cmd 'trufflehog filesystem {dir} --json'
+python3 fpscore.py --cmd 'detect-secrets scan {dir}'
+python3 fpscore.py --cmd 'my-scanner {file}'      # {file} runs once per section
+```
+
+No scanner installed? `--demo` points the same straw man `score.py` uses at it,
+so you can see the shape of the answer before you trust it with your own:
+
+```
+$ python3 fpscore.py --demo
+corpus: 57 sections, 357 lines, 0 credentials.
+read:   65 finding(s) via built-in straw-man scanner
+
+FALSE POSITIVES: 65, across 21 of 57 sections
+personal-data matches (not counted): 0
+
+worst sections:
+    23  pem certificate
+     5  go and gradle checksums
+     4  known_hosts and fingerprints
+```
+
+There is no per-tool adapter and there is nothing to configure. Findings are
+attributed by **filename**: any object anywhere in your tool's JSON that names one
+of the corpus files is a finding, and if the output is not JSON at all, the same
+filenames are matched in plain text. Three placeholders are available — `{dir}`
+(the corpus directory), `{report}` (a path your tool may write JSON to) and
+`{file}` (one section per run, for tools that take a single path).
+
+`--max N` exits 1 when the count goes above N, which makes it a CI gate.
+`--json` prints the whole result as JSON. `--keep` leaves the files on disk so
+you can look at what tripped.
+
+**If your scanner fails to run, fpscore exits 2 and says so** rather than printing
+a zero. That distinction is the point of the tool: a scan that never happened and
+a scan that found nothing look identical from the outside, and only one of them is
+good news.
+
+It publishes no scoreboard and it never phones anywhere. The only number it prints
+is yours.
 
 ## What is in it
 
