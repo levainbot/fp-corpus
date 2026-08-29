@@ -1,0 +1,482 @@
+{
+  "name": "levain-false-positive-corpus",
+  "license": "MIT",
+  "claim": "No section of this corpus contains a credential. Every secret a scanner reports against it is a false positive.",
+  "how_to_score": "For each section, run your scanner over `text`. Anything it calls a secret is a false positive. `personal_data` lists the non-secret spans a redactor may legitimately mask; subtract them if your tool does PII too.",
+  "homepage": "https://levain.bmac.io/false-positives.html",
+  "text_version": "https://levain.bmac.io/fp-corpus.txt",
+  "source": "https://levain.bmac.io/fp-corpus.json",
+  "built_by": "Levain, an AI agent. https://levain.bmac.io/",
+  "counts": {
+    "formats": 57,
+    "lines": 357,
+    "personal_data": 13
+  },
+  "kinds": {
+    "ipv4": "A public IPv4 address. Not a secret; personal data in an access log.",
+    "email": "An email address. Not a secret; a real person's address.",
+    "homedir": "A username inside a home-directory path."
+  },
+  "sections": [
+    {
+      "name": "nginx access",
+      "lines": 3,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        },
+        {
+          "text": "198.51.100.7",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "203.0.113.42 - - [27/Aug/2026:09:14:02 +0000] \"GET /api/v2/users?page=3 HTTP/1.1\" 200 4213 \"https://example.com/dash\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36\"\n198.51.100.7 - - [27/Aug/2026:09:14:03 +0000] \"POST /checkout HTTP/2.0\" 302 0 \"-\" \"curl/8.4.0\"\n10.0.1.15 - - [27/Aug/2026:09:14:04 +0000] \"GET /static/app.9f8c2b1a4e.js HTTP/1.1\" 304 0 \"-\" \"-\""
+    },
+    {
+      "name": "apache error",
+      "lines": 2,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "[Thu Aug 27 09:14:02.881234 2026] [php:notice] [pid 2481:tid 140234891] [client 203.0.113.42:54321] PHP Notice:  Undefined index: cart_id in /var/www/html/checkout.php on line 88\n[Thu Aug 27 09:14:11.002913 2026] [ssl:warn] [pid 2480] AH01906: server.example.com:443:0 server certificate is a CA certificate"
+    },
+    {
+      "name": "syslog",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "198.51.100.7",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "Aug 27 09:14:02 web-01 sshd[24815]: Accepted publickey for deploy from 198.51.100.7 port 51234 ssh2: RSA SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8\nAug 27 09:14:02 web-01 systemd[1]: Started Session 3312 of user deploy.\nAug 27 09:14:03 web-01 kernel: [1234567.890123] TCP: request_sock_TCP: Possible SYN flooding on port 443. Sending cookies.\nAug 27 09:14:05 db-02 postgres[1188]: [12-1] db=orders,user=app LOG:  duration: 1204.882 ms  execute <unnamed>: SELECT * FROM orders WHERE id = $1"
+    },
+    {
+      "name": "systemd journal",
+      "lines": 3,
+      "secrets": [],
+      "personal_data": [],
+      "text": "-- Journal begins at Tue 2026-08-25 00:12:41 UTC, ends at Thu 2026-08-27 09:14:02 UTC. --\nAug 27 09:12:00 runner-7 systemd[1]: run-docker-runtime\\x2drunc-moby-3f2b8c.mount: Deactivated successfully.\nAug 27 09:12:00 runner-7 dockerd[900]: time=\"2026-08-27T09:12:00.114882913Z\" level=info msg=\"ignoring event\" container=3f2b8c9e1d4a"
+    },
+    {
+      "name": "java stacktrace",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [],
+      "text": "2026-08-27 09:14:02.881 ERROR 1 --- [http-nio-8080-exec-4] c.e.orders.OrderController : Unhandled\njava.lang.IllegalStateException: Order 88213 already settled\n\tat com.example.orders.OrderService.settle(OrderService.java:214)\n\tat com.example.orders.OrderController.post(OrderController.java:88)\n\tat java.base/java.lang.Thread.run(Thread.java:1583)\nCaused by: java.sql.SQLException: deadlock detected\n\t... 42 common frames omitted"
+    },
+    {
+      "name": "python traceback",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "Traceback (most recent call last):\n  File \"/srv/app/handlers/checkout.py\", line 141, in post\n    return self.settle(order_id)\n  File \"/srv/app/services/orders.py\", line 88, in settle\n    raise ValueError(f\"order {order_id!r} already settled\")\nValueError: order '88213' already settled"
+    },
+    {
+      "name": "node stacktrace",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [],
+      "text": "TypeError: Cannot read properties of undefined (reading 'total')\n    at computeCart (/srv/app/dist/cart.js:44:19)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async /srv/app/dist/server.js:212:7"
+    },
+    {
+      "name": "npm install",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "npm warn deprecated inflight@1.0.6: This module is not supported\nadded 412 packages, and audited 413 packages in 9s\nfound 0 vulnerabilities\nnpm notice New major version of npm available! 10.8.2 -> 11.0.0\nintegrity sha512-Qv0FJmR6c1qEbnrxSbG/mgDzUlNI4LKgrn/Y7GkvKMqOAsPRLDdgtLbGSXfPjPGCcbSyMhwGWHUqDbcSZa0hDA=="
+    },
+    {
+      "name": "pip install",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "Collecting requests==2.32.3\n  Downloading requests-2.32.3-py3-none-any.whl (64 kB)\nInstalling collected packages: urllib3, idna, charset-normalizer, certifi, requests\nSuccessfully installed certifi-2024.8.30 charset-normalizer-3.3.2 idna-3.8 requests-2.32.3 urllib3-2.2.2\nWARNING: You are using pip version 24.0; however, version 24.2 is available."
+    },
+    {
+      "name": "git output",
+      "lines": 9,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "dana@example.com",
+          "kind": "email"
+        }
+      ],
+      "text": "commit 9f8c2b1a4e7d3c6ب0a1b2c3d4e5f60718293a4b\nAuthor: Dana Whitfield <dana@example.com>\nDate:   Thu Aug 27 09:14:02 2026 +0000\n\n    fix(cart): guard against undefined totals\n\ndiff --git a/src/cart.js b/src/cart.js\nindex 3f2b8c9..a1d4e77 100644\n--- a/src/cart.js\n+++ b/src/cart.js\n@@ -41,7 +41,7 @@ function computeCart(cart) {"
+    },
+    {
+      "name": "git clean",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "commit 9f8c2b1a4e7d3c60a1b2c3d4e5f60718293a4b5c\nMerge: 3f2b8c9 a1d4e77\nDate:   Thu Aug 27 09:14:02 2026 +0000\n 3 files changed, 41 insertions(+), 12 deletions(-)\n create mode 100644 src/cart.test.js"
+    },
+    {
+      "name": "docker",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "Step 7/12 : RUN npm ci --omit=dev\n ---> Running in 3f2b8c9e1d4a\n ---> Removed intermediate container 3f2b8c9e1d4a\nSuccessfully built a1d4e7739f8c\nSuccessfully tagged registry.example.com/orders/api:1.14.2\nlatest: digest: sha256:9f8c2b1a4e7d3c60a1b2c3d4e5f60718293a4b5c6d7e8f9012a3b4c5d6e7f8091 size: 2412"
+    },
+    {
+      "name": "kubernetes",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [],
+      "text": "NAME                        READY   STATUS    RESTARTS   AGE\norders-api-7d9f8c2b1a-4e7dq 1/1     Running   0          14h\norders-api-7d9f8c2b1a-x2m9p 0/1     Pending   0          3m12s\nEvents:\n  Type     Reason     Age    From               Message\n  Warning  FailedScheduling  3m12s  default-scheduler  0/6 nodes are available: 6 Insufficient memory.\n  Normal   Pulled     14h    kubelet            Container image \"registry.example.com/orders/api:1.14.2\" already present on machine"
+    },
+    {
+      "name": "json log",
+      "lines": 2,
+      "secrets": [],
+      "personal_data": [],
+      "text": "{\"ts\":\"2026-08-27T09:14:02.881Z\",\"level\":\"info\",\"service\":\"orders-api\",\"trace_id\":\"4e7d3c60a1b2c3d4\",\"span_id\":\"a1b2c3d4e5f60718\",\"msg\":\"request completed\",\"method\":\"GET\",\"path\":\"/api/v2/users\",\"status\":200,\"dur_ms\":41.2,\"user_id\":88213}\n{\"ts\":\"2026-08-27T09:14:03.114Z\",\"level\":\"warn\",\"service\":\"orders-api\",\"msg\":\"retrying upstream\",\"attempt\":2,\"upstream\":\"inventory.internal:8443\",\"backoff_ms\":250}"
+    },
+    {
+      "name": "sql log",
+      "lines": 2,
+      "secrets": [],
+      "personal_data": [],
+      "text": "LOG:  duration: 1204.882 ms  statement: SELECT o.id, o.total_cents, c.region FROM orders o JOIN customers c ON c.id = o.customer_id WHERE o.created_at >= '2026-08-01' AND o.status = 'settled' ORDER BY o.id LIMIT 500 OFFSET 12000\nLOG:  duration: 0.114 ms  parse <unnamed>: UPDATE inventory SET qty = qty - $1 WHERE sku = $2"
+    },
+    {
+      "name": "http headers",
+      "lines": 8,
+      "secrets": [],
+      "personal_data": [],
+      "text": "HTTP/2 200\ndate: Thu, 27 Aug 2026 09:14:02 GMT\ncontent-type: application/json; charset=utf-8\ncontent-length: 4213\ncache-control: public, max-age=31536000, immutable\netag: W/\"1075-9f8c2b1a4e7\"\nx-request-id: 4e7d3c60-a1b2-c3d4-e5f6-0718293a4b5c\nstrict-transport-security: max-age=63072000; includeSubDomains"
+    },
+    {
+      "name": "prometheus",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "# HELP http_request_duration_seconds Request latency\n# TYPE http_request_duration_seconds histogram\nhttp_request_duration_seconds_bucket{le=\"0.1\",method=\"GET\",route=\"/api/v2/users\"} 41882\nhttp_request_duration_seconds_sum{method=\"GET\",route=\"/api/v2/users\"} 1204.882\nprocess_resident_memory_bytes 2.41482752e+08"
+    },
+    {
+      "name": "webpack build",
+      "lines": 3,
+      "secrets": [],
+      "personal_data": [],
+      "text": "asset app.9f8c2b1a4e.js 412 KiB [emitted] [immutable] [minimized] (name: main)\nasset vendor.a1d4e7739f.js 1.14 MiB [emitted] [immutable] [minimized] (name: vendors)\nwebpack 5.94.0 compiled successfully in 9412 ms"
+    },
+    {
+      "name": "test runner",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [],
+      "text": "PASS  src/cart.test.js (4.128 s)\n  computeCart\n    ✓ sums line items (12 ms)\n    ✓ applies percentage discounts (3 ms)\n    ✕ handles undefined totals (8 ms)\n\nTests:       1 failed, 41 passed, 42 total\nTime:        9.412 s"
+    },
+    {
+      "name": "csv data",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [],
+      "text": "order_id,created_at,region,total_cents,status\n88213,2026-08-27T09:14:02Z,eu-west-1,412300,settled\n88214,2026-08-27T09:14:11Z,us-east-1,1204882,pending\n88215,2026-08-27T09:15:00Z,ap-southeast-2,9412,refunded"
+    },
+    {
+      "name": "dmesg",
+      "lines": 3,
+      "secrets": [],
+      "personal_data": [],
+      "text": "[1234567.890123] usb 1-4: new high-speed USB device number 12 using xhci_hcd\n[1234567.912441] EXT4-fs (nvme0n1p2): mounted filesystem 3f2b8c9e-1d4a-4e7d-9c60-a1b2c3d4e5f6 r/w with ordered data mode\n[1234568.004128] audit: type=1400 audit(1756286042.881:412): apparmor=\"DENIED\" operation=\"open\" profile=\"snap.docker.docker\""
+    },
+    {
+      "name": "terraform plan",
+      "lines": 8,
+      "secrets": [],
+      "personal_data": [],
+      "text": "  # aws_s3_bucket.assets will be created\n  + resource \"aws_s3_bucket\" \"assets\" {\n      + arn                         = (known after apply)\n      + bucket                      = \"example-assets-eu-west-1\"\n      + region                      = \"eu-west-1\"\n      + hosted_zone_id              = (known after apply)\n    }\nPlan: 3 to add, 1 to change, 0 to destroy."
+    },
+    {
+      "name": "config file (placeholders)",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "DATABASE_URL=postgres://app:__PASSWORD__@db.internal:5432/orders\nREDIS_URL=redis://cache.internal:6379/0\nAPI_BASE=https://api.example.com/v2\nLOG_LEVEL=info\nMAX_CONNECTIONS=50\nFEATURE_NEW_CHECKOUT=true"
+    },
+    {
+      "name": "prose",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [],
+      "text": "The incident began at 09:14:02 UTC when the orders API began returning 502s.\nRoot cause: a deploy at 08:58 shipped a migration that took an ACCESS EXCLUSIVE lock\non the orders table for 41 seconds. We rolled back to 1.14.1 at 09:22 and latency\nrecovered by 09:24. Follow-ups: add a lock timeout, and alert on p99 above 500ms."
+    },
+    {
+      "name": "github actions",
+      "lines": 9,
+      "secrets": [],
+      "personal_data": [],
+      "text": "2026-08-27T09:14:02.8812349Z ##[group]Run actions/checkout@v4\n2026-08-27T09:14:02.8813011Z   with:\n2026-08-27T09:14:02.8813402Z     repository: acme/orders-api\n2026-08-27T09:14:02.8814100Z     token: ***\n2026-08-27T09:14:03.1002913Z Syncing repository: acme/orders-api\n2026-08-27T09:14:03.4410022Z ##[endgroup]\n2026-08-27T09:14:04.0021931Z Run npm ci\n2026-08-27T09:14:19.7781200Z added 812 packages, and audited 813 packages in 15s\n2026-08-27T09:14:19.9910023Z found 0 vulnerabilities"
+    },
+    {
+      "name": "go test",
+      "lines": 10,
+      "secrets": [],
+      "personal_data": [],
+      "text": "=== RUN   TestSettleOrder\n    order_test.go:88: got status \"settled\", want \"pending\"\n--- FAIL: TestSettleOrder (0.04s)\n=== RUN   TestConcurrentSettle\n--- PASS: TestConcurrentSettle (1.21s)\nFAIL\tgithub.com/acme/orders/internal/settle\t1.284s\nok  \tgithub.com/acme/orders/internal/http\t0.912s\ngoroutine 41 [running]:\ngithub.com/acme/orders/internal/settle.(*Service).Settle(0xc0000b4000, 0x14d2a80)\n\t/home/runner/work/orders/orders/internal/settle/service.go:214 +0x1c5"
+    },
+    {
+      "name": "cargo build",
+      "lines": 9,
+      "secrets": [],
+      "personal_data": [],
+      "text": "   Compiling serde v1.0.210\n   Compiling tokio v1.40.0\nwarning: unused variable: `ctx`\n  --> src/settle.rs:88:9\n   |\n88 |     let ctx = Context::new();\n   |         ^^^ help: if this is intentional, prefix it with an underscore\n    Finished `release` profile [optimized] target(s) in 41.28s\n     Running `target/release/orders --config /etc/orders/prod.toml`"
+    },
+    {
+      "name": "rails log",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "Started GET \"/orders/88213\" for 203.0.113.42 at 2026-08-27 09:14:02 +0000\nProcessing by OrdersController#show as HTML\n  Parameters: {\"id\"=>\"88213\"}\n  Order Load (1.2ms)  SELECT \"orders\".* FROM \"orders\" WHERE \"orders\".\"id\" = $1 LIMIT $2  [[\"id\", 88213], [\"LIMIT\", 1]]\nCompleted 200 OK in 41ms (Views: 12.8ms | ActiveRecord: 1.2ms | Allocations: 8812)"
+    },
+    {
+      "name": "laravel log",
+      "lines": 2,
+      "secrets": [],
+      "personal_data": [],
+      "text": "[2026-08-27 09:14:02] production.ERROR: SQLSTATE[40P01]: Deadlock detected {\"exception\":\"[object] (Illuminate\\\\Database\\\\QueryException(code: 40P01))\"}\n[2026-08-27 09:14:03] production.INFO: Order settled {\"order_id\":88213,\"amount_cents\":1299,\"currency\":\"USD\"}"
+    },
+    {
+      "name": "dotnet stack",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [],
+      "text": "Unhandled exception. System.InvalidOperationException: Order 88213 already settled\n   at Acme.Orders.OrderService.Settle(Int64 id) in C:\\src\\orders\\OrderService.cs:line 214\n   at Acme.Orders.Controllers.OrderController.Post(OrderRequest req) in C:\\src\\orders\\OrderController.cs:line 88\nMicrosoft.NETCore.App 8.0.10 [/usr/share/dotnet/shared/Microsoft.NETCore.App]"
+    },
+    {
+      "name": "powershell",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "dwhitfield",
+          "kind": "homedir"
+        },
+        {
+          "text": "dwhitfield",
+          "kind": "homedir"
+        }
+      ],
+      "text": "PS C:\\Users\\dwhitfield\\src\\orders> dotnet build\nMSBuild version 17.11.4+37eb419ad for .NET\n  Determining projects to restore...\n  Restored C:\\Users\\dwhitfield\\src\\orders\\Orders.csproj (in 812 ms)\nBuild succeeded in 4.12s"
+    },
+    {
+      "name": "curl verbose",
+      "lines": 14,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        },
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "*   Trying 203.0.113.42:443...\n* Connected to api.example.com (203.0.113.42) port 443\n* ALPN: server accepted h2\n* Server certificate:\n*  subject: CN=api.example.com\n*  start date: Aug  1 00:00:00 2026 GMT\n*  expire date: Oct 30 23:59:59 2026 GMT\n> GET /v2/orders HTTP/2\n> Host: api.example.com\n> user-agent: curl/8.4.0\n> accept: */*\n< HTTP/2 200\n< content-type: application/json\n< x-request-id: 3f2b8c9e-1d4a-4b88-9c21-a1d4e7712345"
+    },
+    {
+      "name": "aws cli",
+      "lines": 17,
+      "secrets": [],
+      "personal_data": [],
+      "text": "{\n    \"Reservations\": [\n        {\n            \"OwnerId\": \"123456789012\",\n            \"Instances\": [\n                {\n                    \"InstanceId\": \"i-0a1b2c3d4e5f60718\",\n                    \"InstanceType\": \"m6i.large\",\n                    \"PrivateIpAddress\": \"10.0.1.15\",\n                    \"IamInstanceProfile\": {\n                        \"Arn\": \"arn:aws:iam::123456789012:instance-profile/orders-api\"\n                    }\n                }\n            ]\n        }\n    ]\n}"
+    },
+    {
+      "name": "mongo / redis",
+      "lines": 3,
+      "secrets": [],
+      "personal_data": [],
+      "text": "{\"t\":{\"$date\":\"2026-08-27T09:14:02.881+00:00\"},\"s\":\"I\",\"c\":\"NETWORK\",\"id\":22943,\"ctx\":\"listener\",\"msg\":\"Connection accepted\",\"attr\":{\"remote\":\"10.0.1.15:51234\",\"connectionId\":8812}}\n1188:M 27 Aug 2026 09:14:02.881 * Background saving terminated with success\n1188:M 27 Aug 2026 09:14:03.114 # Warning: 32 bit instance detected but no memory limit set."
+    },
+    {
+      "name": "yarn / pnpm",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "YN0000: ┌ Resolution step\nYN0061: │ core-js@npm:2.6.12 is deprecated: core-js@<3.23.3 is no longer maintained\nYN0000: └ Completed in 4s 812ms\n WARN  deprecated request@2.88.2: request has been deprecated\nProgress: resolved 812, reused 800, downloaded 12, added 812, done\nLockfile is up to date, resolution step is skipped"
+    },
+    {
+      "name": "nginx error",
+      "lines": 2,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "2026/08/27 09:14:02 [error] 2481#2481: *8812 upstream timed out (110: Connection timed out) while reading response header from upstream, client: 203.0.113.42, server: api.example.com, request: \"GET /v2/orders HTTP/1.1\", upstream: \"http://10.0.1.15:8080/v2/orders\", host: \"api.example.com\"\n2026/08/27 09:14:11 [warn] 2480#2480: *8813 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000000041"
+    },
+    {
+      "name": "elasticsearch",
+      "lines": 2,
+      "secrets": [],
+      "personal_data": [],
+      "text": "[2026-08-27T09:14:02,881][INFO ][o.e.c.r.a.AllocationService] [node-1] Cluster health status changed from [YELLOW] to [GREEN] (reason: [shards started [[orders-2026.08][0]]]).\n[2026-08-27T09:14:03,114][WARN ][o.e.m.j.JvmGcMonitorService] [node-1] [gc][young][881234][4128] duration [1.2s], collections [1]/[1.8s]"
+    },
+    {
+      "name": "terminal / homebrew",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "==> Downloading https://ghcr.io/v2/homebrew/core/node/manifests/22.9.0\n==> Fetching node\n==> Pouring node--22.9.0.arm64_sonoma.bottle.tar.gz\n🍺  /opt/homebrew/Cellar/node/22.9.0: 2,412 files, 81.2MB\n==> Caveats\nBash completion has been installed to: /opt/homebrew/etc/bash_completion.d"
+    },
+    {
+      "name": "jest / vitest",
+      "lines": 8,
+      "secrets": [],
+      "personal_data": [],
+      "text": " FAIL  src/settle.test.ts > settle > refuses a settled order\nAssertionError: expected 'settled' to be 'pending'\n ❯ src/settle.test.ts:88:22\n     86|   const order = await settle(88213);\n     87|   expect(order.status).toBe('pending');\nTest Files  1 failed | 12 passed (13)\n     Tests  1 failed | 128 passed (129)\n  Duration  4.12s (transform 812ms, setup 0ms, collect 1.28s)"
+    },
+    {
+      "name": "minified js",
+      "lines": 2,
+      "secrets": [],
+      "personal_data": [],
+      "text": "!function(e,t){\"object\"==typeof exports&&\"undefined\"!=typeof module?t(exports):\"function\"==typeof define&&define.amd?define([\"exports\"],t):t((e=\"undefined\"!=typeof globalThis?globalThis:e||self).Cart={})}(this,function(e){\"use strict\";function t(e,t){for(var n=0;n<t.length;n++){var r=t[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(e,r.key,r)}}var n=function(){function e(t){var n=t.items,r=void 0===n?[]:n;!function(e,t){if(!(e instanceof t))throw new TypeError(\"Cannot call a class as a function\")}(this,e),this.items=r,this._total=null}var r,i,o;return r=e,(i=[{key:\"add\",value:function(e){return this.items.push(e),this._total=null,this}},{key:\"total\",get:function(){return null===this._total&&(this._total=this.items.reduce(function(e,t){return e+t.price*t.qty},0)),this._total}}])&&t(r.prototype,i),o&&t(r,o),Object.defineProperty(r,\"prototype\",{writable:!1}),e}();e.Cart=n});\nvar Ai=Object.create,ki=Object.defineProperty,Pi=Object.getOwnPropertyDescriptor,Ri=Object.getOwnPropertyNames,Ni=Object.getPrototypeOf,Ii=Object.prototype.hasOwnProperty,Fi=(u,d)=>()=>(d||u((d={exports:{}}).exports,d),d.exports);"
+    },
+    {
+      "name": "minified css",
+      "lines": 2,
+      "secrets": [],
+      "personal_data": [],
+      "text": ".a1b2c3{display:flex;gap:.5rem}.d4e5f6{--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.g7h8i9:is(.dark *){background-color:rgb(17 24 39/var(--tw-bg-opacity,1))}\n@media(min-width:640px){.sm\\:hidden{display:none}.sm\\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}}"
+    },
+    {
+      "name": "source map",
+      "lines": 3,
+      "secrets": [],
+      "personal_data": [],
+      "text": "//# sourceMappingURL=app.9f8c2b1a4e.js.map\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,6+z8OtkwW4eqR+v/+fpt/WvRZtBsfFMBR7r03bgpQ2y75GSuKRIBfLx4BmiXbiaXOHEepSONWZ3FTJnygs862wAAiYwwyhMW6eEvVOLbmeDSHzH0TUyZLu7ON/+ZMVsuyYiwRpJ94nte73GinaHEQtG5fJ/yE6rxrvN/YV4qHJFoNAAAHPBKHthEpqqucT5RkIf6eG79vCQ+va0XSWMWeQdyDYnGV+WzjBkrUJe5edMjT96vdKbkcYaHNzEjTZ7xhDuw\n{\"version\":3,\"file\":\"app.9f8c2b1a4e.js\",\"sources\":[\"../src/cart.ts\",\"../src/checkout.ts\"],\"names\":[\"Cart\",\"items\",\"total\"],\"mappings\":\"AAAA,SAASA,EAAKC,GACb,OAAOA,EAAMC,OAAO,SAACC,EAAKC,GAAN,OAAeD,EAAMC,EAAEC,MAAQD,EAAEE,KAAO\"}"
+    },
+    {
+      "name": "css data uri",
+      "lines": 2,
+      "secrets": [],
+      "personal_data": [],
+      "text": ".icon-cart{background-image:url(data:image/png;base64,3du+dhGrjESGb/8So+Vm8bTwP5axHfY+xMTPh7LSebo2HZ/CW0r1N+Y2bPUjkp+80OyQqhkGCRFW3H9FAmnETQAA1uEIsiNcSz7EPOfD5WYkWwvDPpOreSC/iWDCzHEMr9uSrhWlx6Vbc3HxymPtWb4A8F8YCCwpydoEW6sHmqnBvgAAS9O5i9utwzJZosCSE0yVvthG4cn2KG0HSWBzHXPgg0UYUoORuHcp4qG169CCXFIcLaUZu4DL6UeGtoBrOUzUEwAAnGmuj0xm4WR0lV29xLobzVU3qdOg4LLYMVbrMuJEmgHLeRCO1xhSvjPvJws1AWKrp8WvIJi6cRpyYNrqwI7CKwAAzkgRnefeQhZbiA6rqKmi4fKS1bsMUAajeeEm65XB+LvLbflr);background-size:16px 16px}\n@font-face{font-family:Inter;font-weight:400;src:url(data:font/woff2;base64,dovBqUlepZD0wLB43m3HxyZBVX2Mdpo4+O8SzNsJyZTIjKXmCs37JN1lkvPFAZIp/6jX01HLPfgobOUahzXpiAAAl+uCLxhMGrLZ6wUlHCPJg2ffFCf/3ekO07GJ/NS3we1Xc4GIeiIwo6j2egg0UGbMcqQFiTqssQPGcKkB1I3FXAAAM+qhQyoY2b1Zg7RY6dN2/BtO/f+VHYwbZuHTHpkUTBr1AnhNcQjKg2db3AdJLpirebAERcKyV84XGR2MQDcLXgAAWGmBxFZS8pPmz0s4CYf7CxyXufaBbxbP14r8) format(\"woff2\");font-display:swap}"
+    },
+    {
+      "name": "html head",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [],
+      "text": "<link rel=\"stylesheet\" href=\"/static/main.4e8c1b9a2f.css\" integrity=\"sha512-bgy5bZ6fwCqwhbYRe9QLdoK9TVxpJjC4Dn7j+DsuSkseImFCE2Vyq8Z09W3koeF0ngFdVxwueImWzWpR5hjYbA==\" crossorigin=\"anonymous\">\n<script src=\"https://cdn.example.com/lodash/4.17.21/lodash.min.js\" integrity=\"sha512-BzFqWnBYp/l2J+OfL8/elEA0AGAfbxG/LHHmfWv0qgg2bH3SC3VMbwn43yWZGbasCavceiWQX45j6NVHrjQkIA==\" crossorigin=\"anonymous\"></script>\n<script src=\"/static/vue.global.prod.js\" integrity=\"sha512-9mD3Tj+SXi6srRmkRUJ7rJEBj/fscPYgM30EkZmsg5jlVw3RKqskujjTKyWH3pybMHpa5dAbzApToqhgw5HuxA==\" defer></script>\n<meta name=\"csrf-param\" content=\"authenticity_token\">"
+    },
+    {
+      "name": "package-lock json",
+      "lines": 18,
+      "secrets": [],
+      "personal_data": [],
+      "text": "{\n  \"name\": \"orders-api\",\n  \"lockfileVersion\": 3,\n  \"packages\": {\n    \"node_modules/lodash\": {\n      \"version\": \"4.17.21\",\n      \"resolved\": \"https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz\",\n      \"integrity\": \"sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==\",\n      \"license\": \"MIT\"\n    },\n    \"node_modules/semver\": {\n      \"version\": \"7.6.3\",\n      \"resolved\": \"https://registry.npmjs.org/semver/-/semver-7.6.3.tgz\",\n      \"integrity\": \"sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs/SbeaElSpsPQ==\",\n      \"dev\": true\n    }\n  }\n}"
+    },
+    {
+      "name": "docker digests",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "REPOSITORY                    TAG       DIGEST                                                                    IMAGE ID       SIZE\nregistry.example.com/orders   v2.4.1    sha256:64e9a4618c598b41f848eab5dd7179e165dccddfb60d73a215ef138a2166ee4e   3f2b8c9e1d4a   184MB\nregistry.example.com/web      latest    sha256:e5b190f11fbd9668d90664999c20cefb550faca21e3bc8dcd3d1392cc14ec39f   9a1c4b2e8f77   72.4MB\nDigest: sha256:66c1e90fb8b701ef54e3e09a255c2da7e97b2f29492ace498a1a192594bf7282\nStatus: Downloaded newer image for registry.example.com/orders:v2.4.1"
+    },
+    {
+      "name": "pem certificate",
+      "lines": 32,
+      "secrets": [],
+      "personal_data": [],
+      "text": "-----BEGIN CERTIFICATE-----\nMIIDFTCCAf2gAwIBAgIUXAzTPfqT2QulR6AVIepL2sqljEQwDQYJKoZIhvcNAQEL\nBQAwGjEYMBYGA1UEAwwPYXBpLmV4YW1wbGUuY29tMB4XDTI2MDgyOTE2MjQzNloX\nDTI2MTEyNzE2MjQzNlowGjEYMBYGA1UEAwwPYXBpLmV4YW1wbGUuY29tMIIBIjAN\nBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnjo3dNuFosAuED45/0z0nXYEdMux\nYfxKLw1+5nY4fsoEV3ECZr5/+aEsknNUwBUUPaCXkWmQnZpqt52aZAVLT0U/jLdA\nhb6J7EssinTI5HrATRkYaQrwBfjBLYLsozHhncWhjsQHR6GjE4ADS5PqmlflpYpC\ndIoHwwY9s94D3K+RJJKXf7DP/bCyAPZPU536SEDMfp2HhTaws3+e3wzLS8CkqZTe\nVioQJim1lkwQu+W0GWaP2FnoD94EAXo4ULiq7y7zme9zwbYdwbz0EF8AWGqDW5JG\nQZ3H/PCosO2A4lWije18U9kv/MIJIngLBmqQFkmRrJU7/ujXXEk0hHdhIwIDAQAB\no1MwUTAdBgNVHQ4EFgQUfVK2+VFlrSt5Tjx3S4dlZ2lrx/EwHwYDVR0jBBgwFoAU\nfVK2+VFlrSt5Tjx3S4dlZ2lrx/EwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0B\nAQsFAAOCAQEAabi5CXsg6xtnHZJzWNZu/b/sjLdy2xOzbxPmc+nOaFRmLWrcX8nZ\ncbrUF5bhHJALml0j83NrW4GWR59sSr369w+TU+ViIU6Q5A+q/EFf0vN3HHzim0Re\n+9/WAGOTwiSp1BfEgwR5pU22c4jtY9mJV9C5wAJVc6/hr0d1LFlXas2r04TnozBM\nzDsd9Jmau8XiPNW87RjkNCEwdWIxpMPR/FByaegjpELPx4oDzoTAD7kkOZuxyvoR\nTnmEQ337te3eSJN8xy8eQhm+trdhP9cxRRid6TUF9RvJqjjb/llPF9tk5e2tCP8n\nKrWi5FbToTWDC7dFMAX6i7vp5c07egGyWQ==\n-----END CERTIFICATE-----\n-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnjo3dNuFosAuED45/0z0\nnXYEdMuxYfxKLw1+5nY4fsoEV3ECZr5/+aEsknNUwBUUPaCXkWmQnZpqt52aZAVL\nT0U/jLdAhb6J7EssinTI5HrATRkYaQrwBfjBLYLsozHhncWhjsQHR6GjE4ADS5Pq\nmlflpYpCdIoHwwY9s94D3K+RJJKXf7DP/bCyAPZPU536SEDMfp2HhTaws3+e3wzL\nS8CkqZTeVioQJim1lkwQu+W0GWaP2FnoD94EAXo4ULiq7y7zme9zwbYdwbz0EF8A\nWGqDW5JGQZ3H/PCosO2A4lWije18U9kv/MIJIngLBmqQFkmRrJU7/ujXXEk0hHdh\nIwIDAQAB\n-----END PUBLIC KEY-----\nsubject=CN=api.example.com\nissuer=CN=api.example.com\nnotAfter=Nov 27 16:24:36 2026 GMT\nsha256 Fingerprint=92:00:60:AA:73:DB:B1:E8:73:60:E0:2F:90:2B:5F:48:55:70:63:40:F4:1C:8C:A0:AB:53:EB:E2:3A:66:21:A1"
+    },
+    {
+      "name": "ssh public keys",
+      "lines": 3,
+      "secrets": [],
+      "personal_data": [],
+      "text": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHkN0M5cymgYz/CGC8RVRFtHZxv5QnF4AQzu/0t6hLQn dana@laptop\nssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC+q1R7588USPQd9SzOta79H3LyRIeGPIS/tLEUPjDig+K2bySC9XUTLi3fTe9u0aJOBtrBH8d0Ef6SQNvYBLl8EJ1Oze8HqpO5bfnteup4jRvkfTzPCiHJqmqTW2SYejJvAB9UM8PWTgcnFs64wwn5PO+5bKWP1qRHWW83r2aVl0jSWQN3/CwgHaPaFE9e4hnrKhM5KPJlbdz0UES09ryVZpomfW2pyVHa1pn+xKSRzn+eVNWJKM9TbjTND0CoJSMltN+mLbzMGeZDnwNTsWR/4leBOb/YpoAZMTdkkmZdsKVk5JvK5zTAbvp8664CiTQfjUMIdIF0Y1BZuJJBDTN089jmn2SAttlP+1i6sdoZSzRWhVJQTG6qkAvyn6HvW2ifaT6x0CgMVDB96n5yd3Ns2uhbdcyYCqJ2DoujHkJC+T+Z8heREDz7daJ3mlBvYZTzxhLhhz4D6bx7+wuSawp3Z1kHlA3je4loKRJnXbu8n3GWQjYgElkcUDLi5qe2SuU= deploy@build-01\necdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFcYhx65b9c1SIpzG32KHaZ2kmHIxFuDhk1yxsFJ8wbYm0e/xX2wlqq1+vbjOVi+wPSGtSnAhQez3UIRtxRvLrI= ci@runner"
+    },
+    {
+      "name": "known_hosts and fingerprints",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        },
+        {
+          "text": "release@example.com",
+          "kind": "email"
+        }
+      ],
+      "text": "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl\nThe authenticity of host 'git.example.com (203.0.113.42)' can't be established.\nED25519 key fingerprint is SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU.\n256 SHA256:40oAambVco5AGqiuZBqdG4/Hg/LKlvNAHV/xdefEgak dana@laptop (ED25519)\npub   rsa4096 2026-01-14 [SC] [expires: 2028-01-14]\n      D8FF8E1F7DF8B07E1D0C8C6C9E23FC02CAE6D0F1\nuid           [ultimate] Release Signing Key <release@example.com>"
+    },
+    {
+      "name": "terraform lock",
+      "lines": 9,
+      "secrets": [],
+      "personal_data": [],
+      "text": "provider \"registry.terraform.io/hashicorp/aws\" {\n  version     = \"5.62.0\"\n  constraints = \"~> 5.0\"\n  hashes = [\n    \"h1:TBi3puWpawzwesBIbY8jRUsMCtuIHbOuCYbl4GtHLzE=\",\n    \"h1:+jGYBTQ1VJ6TknrGHhP1nULfUZ9yZYLliTLj7Eujmu8=\",\n    \"zh:64e9a4618c598b41f848eab5dd7179e165dccddfb60d73a215ef138a2166ee4e\",\n  ]\n}"
+    },
+    {
+      "name": "api json response",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "HTTP/2 200\netag: W/\"d301469edf8803add013577d5527b8fa\"\nx-request-id: 01J8ZQ4T7K3M9V2XBWNHRFC5PD\n{\"data\":[{\"id\":\"ord_9f8c2b1a4e6d\",\"created\":1787840851,\"status\":\"settled\",\"amount\":4213,\"customer\":{\"id\":\"cus_4e8c1b9a2f77\"}}],\"has_more\":true,\"next_cursor\":\"Le9bQUIp0CXqAHsGdSoVnZprw6JGc+vbKAeMzho08LTL\",\"object\":\"list\"}\n{\"trace_id\":\"4bf92f3577b34da6a3ce929d0e0e4736\",\"span_id\":\"00f067aa0ba902b7\",\"parent_span_id\":\"0000000000000000\"}\n{\"timestamp\":1787840851123456789,\"offset\":9007199254740993,\"partition\":3,\"topic\":\"orders.settled\"}"
+    },
+    {
+      "name": "hexdump",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "00000000: 8950 4e47 0d0a 1a0a 0000 000d 4948 4452  .PNG........IHDR\n00000010: 0000 0010 0000 0010 0806 0000 001f f3ff  ................\n00000020: 6100 0000 0473 4249 5408 0808 087c 0864  a....sBIT....|.d\n00000030: 8800 0000 0970 4859 7300 000e c400 000e  .....pHYs.......\n0000ffe0: 4945 4e44 ae42 6082                      IEND.B`."
+    },
+    {
+      "name": "go and gradle checksums",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [],
+      "text": "github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=\ngithub.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=\ngolang.org/x/sys v0.24.0 h1:Twjiwq9dn6R1fQcyiK+wQyHWfaz/BJB+YIpzU/Cv3Xg=\n> Task :app:compileReleaseKotlin\nDownload https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.0.20/kotlin-stdlib-2.0.20.jar\nVerified checksum sha256 64e9a4618c598b41f848eab5dd7179e165dccddfb60d73a215ef138a2166ee4e for kotlin-stdlib-2.0.20.jar\nBUILD SUCCESSFUL in 42s"
+    },
+    {
+      "name": "ci env dump (masked)",
+      "lines": 9,
+      "secrets": [],
+      "personal_data": [],
+      "text": "GITHUB_SHA=9f8c2b1a4e6d7c3b5a8e2f1d4c9b7a6e3f2d1c8b\nGITHUB_REF=refs/heads/main\nGITHUB_RUN_ID=11284471902\nRUNNER_TRACKING_ID=github_ba4d8c22-7c31-4f0e-9a2b-1d3f5e7c9a0b\nAWS_SECRET_ACCESS_KEY=***\nNPM_TOKEN=***\nCI_COMMIT_SHORT_SHA=9f8c2b1a\nCI_JOB_TOKEN=[MASKED]\nDATABASE_PASSWORD=<redacted>"
+    },
+    {
+      "name": "aws signed request headers",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "x-amz-content-sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\nx-amz-date: 20260827T091402Z\nx-amz-request-id: 8QK2VZ9WJ4X1T0PB\nx-amz-id-2: dJ3nQ8vXbYcLmR2pW5tZaK7hF1gN4sU6eI9oC0xV3yB8mA5rT2wQ7pL0kJ6hG3fD\nx-amz-cf-id: Le9bQUIp0CXqAHsGdSoVnZprw6JGc-vbKAeMzho08LTLQ2fN7wXsPd8A=="
+    },
+    {
+      "name": "kubernetes manifest",
+      "lines": 11,
+      "secrets": [],
+      "personal_data": [],
+      "text": "      envFrom:\n        - secretRef:\n            name: orders-api-credentials\n      volumeMounts:\n        - name: tls\n          mountPath: /etc/tls\n  volumes:\n    - name: tls\n      secret:\n        secretName: api-example-com-tls\nWarning  FailedMount  12s  kubelet  MountVolume.SetUp failed for volume \"tls\" : secret \"api-example-com-tls\" not found"
+    },
+    {
+      "name": "build hashes and cache keys",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [],
+      "text": "Cache key: node-modules-linux-x64-8f3b2c1d9e4a7f6b5c2d1e8a3f7b4c9d\nRestored cache in 4.12s, size 184MB\nwebpack 5.94.0 compiled successfully in 8812 ms\n  main.4e8c1b9a2f77c3d5.js    284 KiB  [emitted] [immutable] [minimized]\n  vendor.9f8c2b1a4e6d7c3b.js  812 KiB  [emitted] [immutable]\nBazel: SHA256 of //src:server = 64e9a4618c598b41f848eab5dd7179e165dccddfb60d73a215ef138a2166ee4e\nnix-build: /nix/store/3q4kw1zx8n5f2v7l0d9h6c8b1a2m4p7r-hello-2.12.1"
+    }
+  ]
+}
