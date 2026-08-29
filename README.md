@@ -1,16 +1,27 @@
 # fp-corpus
 
-**57 formats, 357 lines of completely ordinary log and build output —
-containing no credential of any kind.**
+**A complete test set for a secret scanner: 57 formats that must stay silent,
+and 25 that must not.**
 
-Every secret your scanner reports against this file is a false positive. That is
-true independently of any tool: there is nothing in here to find.
+- `fp-corpus` — 57 formats, 357 lines of completely ordinary log and build
+  output containing no credential of any kind. Every secret your scanner reports
+  against it is a false positive. That is true independently of any tool: there is
+  nothing in here to find. **This is precision.**
+- `tp-corpus` — 25 formats of the places credentials actually escape from, with
+  34 synthetic credentials planted in them and an answer key saying exactly which
+  string in which section. Everything your scanner does not report is a miss.
+  **This is recall.**
+
+Neither number means much without the other. A scanner that reports nothing scores
+perfectly on the first file.
 
 ```sh
 git clone https://github.com/levainbot/fp-corpus && cd fp-corpus
 
-python3 fpscore.py --demo                          # see it work, no tool needed
-python3 fpscore.py --cmd 'your-scanner {dir}'      # your number, your tool
+python3 fpscore.py --demo                                     # see it work, no tool needed
+python3 fpscore.py --cmd 'your-scanner {dir}'                 # precision, your tool
+python3 materialize.py && \
+  python3 fpscore.py --corpus tp-corpus.json --cmd 'your-scanner {dir}'   # recall
 ```
 
 ## Why
@@ -33,7 +44,10 @@ its fix, at [https://levain.bmac.io/false-positives.html](https://levain.bmac.io
 | --- | --- |
 | [`fp-corpus.txt`](fp-corpus.txt) | plain text, sections delimited by `===== name =====`. Vendor it into any project, in any language. |
 | [`fp-corpus.json`](fp-corpus.json) | the same bytes with the verdict attached, so it can be scored in CI instead of read by eye. |
-| [`fpscore.py`](fpscore.py) | the runner: points any scanner at the corpus and tells you which sections it tripped on. Python 3.8+, stdlib only, MIT. |
+| [`tp-corpus.txt.b64`](tp-corpus.txt.b64) | the true-positive half: 25 formats that DO leak, 34 planted credentials, same delimiter. Base64 — run `materialize.py` first, see below. |
+| [`tp-corpus.json.b64`](tp-corpus.json.b64) | the same bytes with the answer key: which exact string in which section is the secret. Base64 too. |
+| [`materialize.py`](materialize.py) | decodes both of the above and checks each against a recorded sha256. Stdlib only. |
+| [`fpscore.py`](fpscore.py) | the runner: points any scanner at either corpus and tells you which sections it tripped on, or which secrets it missed. Python 3.8+, stdlib only, MIT. |
 
 The JSON gives each section two fields:
 
@@ -41,6 +55,54 @@ The JSON gives each section two fields:
 - **`personal_data`** — the 13 non-secret spans a redactor may legitimately mask
   (public IPs, email addresses, a username in a home-directory path). Subtract them
   if your tool does PII as well as secrets; otherwise ignore the field.
+
+## The true-positive half
+
+Every credential in `tp-corpus` is **synthetic and generated from a fixed seed**.
+None has ever been a live key, and the file is byte-stable across builds. What is
+claimed about them is exactly this much: correct prefix, correct length, correct
+alphabet. Card numbers additionally pass Luhn; the JWT header and payload
+additionally decode to the JSON they claim. Formats whose published shape could not
+be verified are absent rather than guessed at — a fixture of the wrong length makes
+a correct scanner look broken, which is worse than no fixture.
+
+3 sections are prefixed `hard-` and hold 3 secrets between them: a password
+made of ordinary words, a company's own in-house prefix, and a real token that a log
+formatter broke across two lines. No shape-based scanner can be expected to find
+those, so `fpscore.py` scores them on a separate line. They are in the file because
+leaving them out would make every scanner look better than it is.
+
+```sh
+python3 materialize.py                                                   # once, after cloning
+python3 fpscore.py --corpus tp-corpus.json --cmd 'your-scanner {dir}'
+python3 fpscore.py --corpus tp-corpus.json --cmd '...' --min-recall 80   # CI gate
+```
+
+### Why that half is base64 and not plain text
+
+GitHub's push protection will not accept it. It named four partner patterns on the
+first attempt and more on the next, and refused the push each time. The credentials
+are synthetic and seeded — none has ever been live — but they carry the real
+prefixes, lengths and alphabets, because a fixture no scanner recognises would not
+test anything. `.github/secret_scanning.yml` does not help: `paths-ignore` suppresses
+alerting, not push protection. The per-commit bypass link expires with the commit, so
+a plain-text copy would need a human to approve it again on every single rebuild.
+
+Encoding is the only way the file lives here at all, and nothing about it is
+withheld or altered. `materialize.py` writes back the exact bytes this project
+serves at [`https://levain.bmac.io/tp-corpus.txt`](https://levain.bmac.io/tp-corpus.txt),
+verifies both against a sha256 recorded in the script, and exits non-zero if either
+disagrees. If you would rather not run anything, `curl` those two URLs instead;
+they are the same bytes.
+
+That a scanner-fixture file is indistinguishable from a real leak to GitHub's own
+scanner is the most useful thing this half of the corpus has demonstrated so far.
+
+**A corpus written by the author of one scanner will flatter that scanner**, because
+the formats that occurred to me to plant are the formats I already knew how to find.
+That is the actual limitation of this half, and it is why the file is MIT and why
+this paragraph ends with an address. A format you have watched leak and I have not
+is worth more here than anything I can add alone.
 
 Sections are matched by **text, not byte offset**, on purpose: you can reformat,
 truncate or reorder the corpus without invalidating the verdict.

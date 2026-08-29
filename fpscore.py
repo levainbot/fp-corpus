@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""fpscore -- point your own secret scanner at fp-corpus and get a number back.
+"""fpscore -- point your own secret scanner at a corpus and get a number back.
 
     python3 fpscore.py --demo
     python3 fpscore.py --cmd 'gitleaks dir --no-git -f json -r {report} {dir}'
@@ -59,6 +59,7 @@ def materialize(corpus, outdir):
             fh.write(section["text"])
             if not section["text"].endswith("\n"):
                 fh.write("\n")
+        section["_file"] = base
         index[base] = section
     return index
 
@@ -83,15 +84,24 @@ def parse_json_ish(text):
         return json.loads(text)
     except ValueError:
         pass
-    rows = []
-    for line in text.splitlines():
-        line = line.strip()
-        if not line or line[0] not in "{[":
-            continue
+    # JSON-lines, or a report document with a scanner's chatter around it. Most
+    # tools write a pretty-printed report and then print a summary line after it,
+    # which defeats a whole-document parse -- and falling back to grepping
+    # filenames silently loses the matched text, which is the half recall needs.
+    dec = json.JSONDecoder()
+    rows, i = [], 0
+    while i < len(text):
+        starts = [x for x in (text.find("{", i), text.find("[", i)) if x != -1]
+        if not starts:
+            break
+        at = min(starts)
         try:
-            rows.append(json.loads(line))
+            obj, end = dec.raw_decode(text, at)
         except ValueError:
+            i = at + 1
             continue
+        rows.append(obj)
+        i = end
     return rows or None
 
 
@@ -149,28 +159,62 @@ def demo_findings(index):
     return found
 
 
+def _matches(f, section, wanted):
+    """Does finding `f` correspond to any string in `wanted`? By text where the
+    scanner reported the matched span, by line otherwise. Never by byte offset:
+    every scanner has its own span convention and pretending otherwise would
+    turn a difference in bookkeeping into a false miss."""
+    if f["match"]:
+        for a in wanted:
+            if a in f["match"] or f["match"] in a:
+                return True
+        return False
+    if f["line"]:
+        lines = section["text"].splitlines()
+        if 0 < f["line"] <= len(lines):
+            return any(a in lines[f["line"] - 1] for a in wanted)
+    return False
+
+
 def classify(found, index):
-    """The corpus's own verdict: `secrets` is empty on every section, so every
-    finding is a false positive EXCEPT one that matches a listed personal_data
-    span (a public IP, an email, a username in a path). Redactors are supposed
-    to mask those; secret scanners are not supposed to report them at all."""
-    fps, personal = [], []
+    """Sort every finding into true positive / false positive / neither.
+
+    On a false-positive corpus `secrets` is empty on every section, so nothing
+    can be a true positive and every finding is a false positive EXCEPT one that
+    matches a listed personal_data span (a public IP, an email, a username in a
+    path). Redactors are supposed to mask those; secret scanners are not
+    supposed to report them at all.
+
+    On a true-positive corpus the same code does recall: a finding that matches
+    a listed secret is a hit, personal_data is still neither, and anything left
+    over is still a false positive -- a scanner that finds the planted key and
+    nine other things has not scored 100%."""
+    tps, fps, personal = [], [], []
     for f in found:
         section = index[f["file"]]
-        allowed = [p["text"] for p in section["personal_data"]]
-        hit = False
-        if f["match"]:
-            for a in allowed:
-                if a in f["match"] or f["match"] in a:
-                    hit = True
-                    break
-        elif f["line"]:
-            lines = section["text"].splitlines()
-            if 0 < f["line"] <= len(lines):
-                hit = any(a in lines[f["line"] - 1] for a in allowed)
         f["section"] = section["name"]
-        (personal if hit else fps).append(f)
-    return fps, personal
+        if _matches(f, section, [p["text"] for p in section["secrets"]]):
+            tps.append(f)
+        elif _matches(f, section, [p["text"] for p in section["personal_data"]]):
+            personal.append(f)
+        else:
+            fps.append(f)
+    return tps, fps, personal
+
+
+def recall(found, index):
+    """Which planted secrets were found and which were missed, core and hard
+    kept apart. The hard tier holds secrets no shape-based scanner can find;
+    averaging them in would just punish every tool for a limit of the approach."""
+    hits, misses = [], []
+    for section in index.values():
+        for s in section["secrets"]:
+            fs = [f for f in found if f["file"] == section["_file"]]
+            got = any(_matches(f, section, [s["text"]]) for f in fs)
+            rec = {"section": section["name"], "kind": s["kind"],
+                   "hard": bool(section.get("hard")), "text": s["text"][:56]}
+            (hits if got else misses).append(rec)
+    return hits, misses
 
 
 def run(cmd, workdir, index, quiet):
@@ -207,14 +251,20 @@ def run(cmd, workdir, index, quiet):
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Score your own secret scanner against fp-corpus.",
+        description="Score your own secret scanner against fp-corpus (precision) "
+                    "or tp-corpus (recall). It tells the two apart by reading the file.",
         epilog="Placeholders in --cmd: {dir} the corpus directory, {report} a "
                "path your tool may write JSON to, {file} one section per run.")
     ap.add_argument("--cmd", help="the scanner command to run")
     ap.add_argument("--demo", action="store_true",
                     help="use the built-in straw-man scanner instead of a real tool")
     ap.add_argument("--corpus", default=os.path.join(HERE, "fp-corpus.json"),
-                    help="path to fp-corpus.json (default: next to this script)")
+                    help="path to fp-corpus.json or tp-corpus.json "
+                         "(default: fp-corpus.json next to this script)")
+    ap.add_argument("--min-recall", type=int, default=None, metavar="PCT",
+                    dest="min_recall",
+                    help="on a true-positive corpus, exit 1 below this core-tier "
+                         "recall percentage")
     ap.add_argument("--max", type=int, default=None, metavar="N",
                     help="exit 1 if false positives exceed N (use in CI)")
     ap.add_argument("--top", type=int, default=8, metavar="N",
@@ -228,7 +278,7 @@ def main():
         ap.error("give --cmd 'your scanner {dir}', or --demo to see it work")
 
     if not os.path.exists(args.corpus):
-        sys.exit("fp-corpus.json not found at %s -- pass --corpus" % args.corpus)
+        sys.exit("corpus not found at %s -- pass --corpus" % args.corpus)
     corpus = load_corpus(args.corpus)
 
     workdir = tempfile.mkdtemp(prefix="fp-corpus-")
@@ -248,7 +298,13 @@ def main():
             source = "filenames in plain output"
         failed = code != 0
 
-    fps, personal = classify(found, index)
+    has_secrets = any(sec.get("secrets") for sec in corpus["sections"])
+    tps, fps, personal = classify(found, index)
+    hits, misses = recall(found, index) if has_secrets else ([], [])
+    core_h = [h for h in hits if not h["hard"]]
+    core_m = [m for m in misses if not m["hard"]]
+    hard_h = [h for h in hits if h["hard"]]
+    hard_m = [m for m in misses if m["hard"]]
 
     # A command that never ran must never read as a clean bill of health.
     if failed and not found:
@@ -268,6 +324,12 @@ def main():
 
     if args.json:
         print(json.dumps({
+            "corpus": corpus.get("name", "unknown"),
+            "measures": "recall and precision" if has_secrets else "precision",
+            "true_positives": len(tps),
+            "core_found": len(core_h), "core_total": len(core_h) + len(core_m),
+            "hard_found": len(hard_h), "hard_total": len(hard_h) + len(hard_m),
+            "missed": misses,
             "false_positives": len(fps),
             "personal_data_matches": len(personal),
             "sections": len(corpus["sections"]),
@@ -277,10 +339,26 @@ def main():
             "findings": fps,
         }, indent=2))
     else:
-        print("corpus: %d sections, %d lines, 0 credentials." % (
-            len(corpus["sections"]), corpus["counts"]["lines"]))
+        print("corpus: %d sections, %d lines, %s." % (
+            len(corpus["sections"]), corpus["counts"]["lines"],
+            ("%d planted credentials" % len(hits + misses)) if has_secrets
+            else "0 credentials"))
         print("read:   %d finding(s) via %s" % (len(found), source))
         print("")
+        if has_secrets:
+            pct = (100 * len(core_h) // max(1, len(core_h) + len(core_m)))
+            print("RECALL: %d of %d on the core tier (%d%%)"
+                  % (len(core_h), len(core_h) + len(core_m), pct))
+            print("        %d of %d on the hard tier -- secrets no shape-based"
+                  % (len(hard_h), len(hard_h) + len(hard_m)))
+            print("        scanner can be expected to find. Scored separately.")
+            if misses:
+                print("")
+                print("missed:")
+                for m in (core_m + hard_m)[:args.top]:
+                    print("  %-34s %s%s" % (m["section"], m["kind"],
+                                            "  [hard]" if m["hard"] else ""))
+            print("")
         print("FALSE POSITIVES: %d, across %d of %d sections"
               % (len(fps), len(by_section), len(corpus["sections"])))
         print("personal-data matches (not counted): %d" % len(personal))
@@ -314,6 +392,13 @@ def main():
 
     if args.max is not None and len(fps) > args.max:
         sys.exit(1)
+    if args.min_recall is not None:
+        total = len(core_h) + len(core_m)
+        if not has_secrets:
+            sys.exit("--min-recall needs a corpus with planted secrets; %s has none"
+                     % os.path.basename(args.corpus))
+        if 100 * len(core_h) // max(1, total) < args.min_recall:
+            sys.exit(1)
 
 
 if __name__ == "__main__":
