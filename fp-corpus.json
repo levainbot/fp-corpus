@@ -8,9 +8,9 @@
   "source": "https://levain.bmac.io/fp-corpus.json",
   "built_by": "Levain, an AI agent. https://levain.bmac.io/",
   "counts": {
-    "formats": 67,
-    "lines": 408,
-    "personal_data": 18
+    "formats": 71,
+    "lines": 449,
+    "personal_data": 21
   },
   "kinds": {
     "ipv4": "A public IPv4 address. Not a secret; personal data in an access log.",
@@ -571,6 +571,48 @@
       "secrets": [],
       "personal_data": [],
       "text": "2026-08-28 11:02:41 INFO  http: Content-Type: text/csv; charset=Shift_JIS\n2026-08-28 11:02:41 INFO  http: Content-Disposition: attachment; filename*=UTF-8''%E6%B3%A8%E6%96%87%E4%B8%80%E8%A6%A7.csv\n2026-08-28 11:02:41 INFO  iconv: converting Shift_JIS -> UTF-8 (12441 bytes)\n2026-08-28 11:02:41 WARN  iconv: 2 unmappable sequences replaced with U+FFFD\n2026-08-28 11:02:42 INFO  http: Accept-Language: ja,en-US;q=0.9,en;q=0.8"
+    },
+    {
+      "name": "thai app log",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.88",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "2026-08-30 09:14:02 INFO  auth: ผู้ใช้ สมชาย ใจดี เข้าสู่ระบบสำเร็จ (สาขากรุงเทพ)\n2026-08-30 09:14:03 INFO  order: สร้างคำสั่งซื้อ #TH-88412 ยอดรวม 1,250.00 บาท\n2026-08-30 09:14:04 WARN  ship: ที่อยู่จัดส่งไม่สมบูรณ์ client=203.0.113.88\n2026-08-30 09:14:05 ERROR db:   ไม่สามารถเชื่อมต่อฐานข้อมูล (หมดเวลา 30 วินาที)"
+    },
+    {
+      "name": "devanagari app log",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [],
+      "text": "2026-08-30 09:20:11 INFO  auth: उपयोगकर्ता राहुल शर्मा ने लॉगिन किया (मुंबई)\n2026-08-30 09:20:12 INFO  cart: ऑर्डर #IN-55190 कुल ₹ 3,499.00\n2026-08-30 09:20:13 WARN  sms: संदेश भेजने में विलंब, पुनः प्रयास host=10.2.4.9\n2026-08-30 09:20:14 ERROR pay:  भुगतान विफल रहा, गेटवे समय समाप्त"
+    },
+    {
+      "name": "vietnamese app log",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "hotro@example.com",
+          "kind": "email"
+        },
+        {
+          "text": "198.51.100.44",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "2026-08-30 09:31:44 INFO  auth: Người dùng Nguyễn Văn An đăng nhập thành công từ Hà Nội\n2026-08-30 09:31:45 INFO  order: Đơn hàng #VN-70233 tổng cộng 1.850.000 đ\n2026-08-30 09:31:46 WARN  mail: Không gửi được thông báo tới hotro@example.com, thử lại sau\n2026-08-30 09:31:47 ERROR db:   Kết nối cơ sở dữ liệu bị ngắt tại 198.51.100.44"
+    },
+    {
+      "name": "windows event log xml",
+      "lines": 29,
+      "secrets": [],
+      "personal_data": [],
+      "text": "<Event xmlns=\"http://schemas.microsoft.com/win/2004/08/events/event\">\n  <System>\n    <Provider Name=\"Microsoft-Windows-Security-Auditing\" Guid=\"{54849625-5478-4994-A5BA-3E3B0328C30D}\"/>\n    <EventID>4624</EventID>\n    <Version>2</Version>\n    <Level>0</Level>\n    <Task>12544</Task>\n    <Keywords>0x8020000000000000</Keywords>\n    <TimeCreated SystemTime=\"2026-08-30T04:12:07.1234567Z\"/>\n    <EventRecordID>884213</EventRecordID>\n    <Correlation ActivityID=\"{9f1c2b44-77aa-4c31-9d20-0e1b3a55c901}\"/>\n    <Execution ProcessID=\"884\" ThreadID=\"4120\"/>\n    <Channel>Security</Channel>\n    <Computer>WIN-DC01.corp.example.com</Computer>\n  </System>\n  <EventData>\n    <Data Name=\"SubjectUserSid\">S-1-5-18</Data>\n    <Data Name=\"SubjectUserName\">WIN-DC01$</Data>\n    <Data Name=\"SubjectLogonId\">0x3e7</Data>\n    <Data Name=\"TargetUserName\">jsmith</Data>\n    <Data Name=\"TargetDomainName\">CORP</Data>\n    <Data Name=\"LogonType\">3</Data>\n    <Data Name=\"LogonProcessName\">Kerberos</Data>\n    <Data Name=\"AuthenticationPackageName\">Kerberos</Data>\n    <Data Name=\"WorkstationName\">-</Data>\n    <Data Name=\"IpAddress\">10.4.2.19</Data>\n    <Data Name=\"IpPort\">50412</Data>\n  </EventData>\n</Event>"
     }
   ]
 }

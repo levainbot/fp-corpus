@@ -1,6 +1,6 @@
 # A false-positive corpus for secret scanners
 #
-# 67 formats of ordinary log, build and CLI output. 408 non-blank lines.
+# 71 formats of ordinary log, build and CLI output. 449 non-blank lines.
 # There is no credential anywhere in this file. Not one. Every string that looks
 # like it might be is a version number, a content hash, a commit id, a placeholder
 # or a public documentation address.
@@ -14,7 +14,7 @@
 # IP addresses use the RFC 5737 documentation ranges; hostnames use example.com.
 # Some of those ARE meant to be flagged by a redactor (an IP is not a secret but
 # it is often personal data) -- see the notes at levain.bmac.io/false-positives.html
-# for the 18 spans the tool that found them still flags, and why each is deliberate.
+# for the 21 spans the tool that found them still flags, and why each is deliberate.
 #
 # MIT licensed. Copy it, extend it, vendor it into your own test suite.
 # Source: https://levain.bmac.io/fp-corpus.txt
@@ -567,3 +567,52 @@ File name: 'C:\Users\田中太郎\Documents\受注データ\2026年8月.csv'
 2026-08-28 11:02:41 INFO  iconv: converting Shift_JIS -> UTF-8 (12441 bytes)
 2026-08-28 11:02:41 WARN  iconv: 2 unmappable sequences replaced with U+FFFD
 2026-08-28 11:02:42 INFO  http: Accept-Language: ja,en-US;q=0.9,en;q=0.8
+
+===== thai app log =====
+2026-08-30 09:14:02 INFO  auth: ผู้ใช้ สมชาย ใจดี เข้าสู่ระบบสำเร็จ (สาขากรุงเทพ)
+2026-08-30 09:14:03 INFO  order: สร้างคำสั่งซื้อ #TH-88412 ยอดรวม 1,250.00 บาท
+2026-08-30 09:14:04 WARN  ship: ที่อยู่จัดส่งไม่สมบูรณ์ client=203.0.113.88
+2026-08-30 09:14:05 ERROR db:   ไม่สามารถเชื่อมต่อฐานข้อมูล (หมดเวลา 30 วินาที)
+
+===== devanagari app log =====
+2026-08-30 09:20:11 INFO  auth: उपयोगकर्ता राहुल शर्मा ने लॉगिन किया (मुंबई)
+2026-08-30 09:20:12 INFO  cart: ऑर्डर #IN-55190 कुल ₹ 3,499.00
+2026-08-30 09:20:13 WARN  sms: संदेश भेजने में विलंब, पुनः प्रयास host=10.2.4.9
+2026-08-30 09:20:14 ERROR pay:  भुगतान विफल रहा, गेटवे समय समाप्त
+
+===== vietnamese app log =====
+2026-08-30 09:31:44 INFO  auth: Người dùng Nguyễn Văn An đăng nhập thành công từ Hà Nội
+2026-08-30 09:31:45 INFO  order: Đơn hàng #VN-70233 tổng cộng 1.850.000 đ
+2026-08-30 09:31:46 WARN  mail: Không gửi được thông báo tới hotro@example.com, thử lại sau
+2026-08-30 09:31:47 ERROR db:   Kết nối cơ sở dữ liệu bị ngắt tại 198.51.100.44
+
+===== windows event log xml =====
+<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+  <System>
+    <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-A5BA-3E3B0328C30D}"/>
+    <EventID>4624</EventID>
+    <Version>2</Version>
+    <Level>0</Level>
+    <Task>12544</Task>
+    <Keywords>0x8020000000000000</Keywords>
+    <TimeCreated SystemTime="2026-08-30T04:12:07.1234567Z"/>
+    <EventRecordID>884213</EventRecordID>
+    <Correlation ActivityID="{9f1c2b44-77aa-4c31-9d20-0e1b3a55c901}"/>
+    <Execution ProcessID="884" ThreadID="4120"/>
+    <Channel>Security</Channel>
+    <Computer>WIN-DC01.corp.example.com</Computer>
+  </System>
+  <EventData>
+    <Data Name="SubjectUserSid">S-1-5-18</Data>
+    <Data Name="SubjectUserName">WIN-DC01$</Data>
+    <Data Name="SubjectLogonId">0x3e7</Data>
+    <Data Name="TargetUserName">jsmith</Data>
+    <Data Name="TargetDomainName">CORP</Data>
+    <Data Name="LogonType">3</Data>
+    <Data Name="LogonProcessName">Kerberos</Data>
+    <Data Name="AuthenticationPackageName">Kerberos</Data>
+    <Data Name="WorkstationName">-</Data>
+    <Data Name="IpAddress">10.4.2.19</Data>
+    <Data Name="IpPort">50412</Data>
+  </EventData>
+</Event>
