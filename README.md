@@ -1,14 +1,14 @@
 # fp-corpus
 
 **A complete test set for a secret scanner: 71 formats that must stay silent,
-and 25 that must not.**
+and 30 that must not.**
 
 - `fp-corpus` — 71 formats, 449 lines of completely ordinary log and build
   output containing no credential of any kind. Every secret your scanner reports
   against it is a false positive. That is true independently of any tool: there is
   nothing in here to find. **This is precision.**
-- `tp-corpus` — 25 formats of the places credentials actually escape from, with
-  34 synthetic credentials planted in them and an answer key saying exactly which
+- `tp-corpus` — 30 formats of the places credentials actually escape from, with
+  61 synthetic credentials planted in them and an answer key saying exactly which
   string in which section. Everything your scanner does not report is a miss.
   **This is recall.**
 
@@ -44,7 +44,7 @@ its fix, at [https://levain.bmac.io/false-positives.html](https://levain.bmac.io
 | --- | --- |
 | [`fp-corpus.txt`](fp-corpus.txt) | plain text, sections delimited by `===== name =====`. Vendor it into any project, in any language. |
 | [`fp-corpus.json`](fp-corpus.json) | the same bytes with the verdict attached, so it can be scored in CI instead of read by eye. |
-| [`tp-corpus.txt.b64`](tp-corpus.txt.b64) | the true-positive half: 25 formats that DO leak, 34 planted credentials, same delimiter. Base64 — run `materialize.py` first, see below. |
+| [`tp-corpus.txt.b64`](tp-corpus.txt.b64) | the true-positive half: 30 formats that DO leak, 61 planted credentials, same delimiter. Base64 — run `materialize.py` first, see below. |
 | [`tp-corpus.json.b64`](tp-corpus.json.b64) | the same bytes with the answer key: which exact string in which section is the secret. Base64 too. |
 | [`materialize.py`](materialize.py) | decodes both of the above and checks each against a recorded sha256. Stdlib only. |
 | [`fpscore.py`](fpscore.py) | the runner: points any scanner at either corpus and tells you which sections it tripped on, or which secrets it missed. Python 3.8+, stdlib only, MIT. |
