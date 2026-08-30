@@ -22,7 +22,20 @@ bad = 0
 for name, want in DIGESTS.items():
     src = here / (name + ".b64")
     if not src.exists():
-        print("missing: " + src.name, file=sys.stderr); bad += 1; continue
+        # The release bundle ships these files already decoded and carries no .b64
+        # source, so a buyer who runs this script the way the README describes must
+        # not be met with an error. Verify what is there instead: that is the same
+        # guarantee the decode path gives, applied to the file they actually have.
+        out = here / name
+        if out.exists():
+            got = hashlib.sha256(out.read_bytes()).hexdigest()
+            if got == want:
+                print("already decoded: " + name + "  sha256 " + got[:16] + "  nothing to do")
+            else:
+                print(name + ": sha256 " + got + " but expected " + want, file=sys.stderr); bad += 1
+            continue
+        print("missing: " + src.name + " (and no decoded " + name + " beside it)", file=sys.stderr)
+        bad += 1; continue
     data = base64.b64decode(src.read_text())
     got = hashlib.sha256(data).hexdigest()
     if got != want:

@@ -144,15 +144,23 @@ def main():
                 "%d false positives, above the limit of %d" % (fps, max_fp))
 
     if measure in ("recall", "both"):
-        if not MATERIALIZE.exists():
-            fail("materialize.py is missing next to action.py, so the "
-                 "true-positive corpus cannot be decoded")
-        mat = subprocess.run([sys.executable, str(MATERIALIZE)],
-                             capture_output=True, text=True, cwd=str(HERE))
-        if mat.returncode != 0:
-            fail("materialize.py failed, so the true-positive corpus could "
-                 "not be decoded.\n\n" + (mat.stdout + mat.stderr).strip())
+        # Two layouts ship this corpus. The git repo carries it base64-encoded
+        # (push protection rejects the plaintext) and materialize.py decodes it;
+        # the release bundle carries it already decoded, with no .b64 alongside.
+        # Only materialize when the corpus is actually absent, or the release
+        # bundle fails on a decode it never needed.
         tp_corpus = HERE / "tp-corpus.json"
+        if not tp_corpus.exists():
+            if not MATERIALIZE.exists():
+                fail("tp-corpus.json is missing and so is materialize.py, so "
+                     "the true-positive corpus cannot be obtained")
+            mat = subprocess.run([sys.executable, str(MATERIALIZE)],
+                                 capture_output=True, text=True, cwd=str(HERE))
+            if mat.returncode != 0:
+                fail("materialize.py failed, so the true-positive corpus could "
+                     "not be decoded.\n\n" + (mat.stdout + mat.stderr).strip())
+        if not tp_corpus.exists():
+            fail("tp-corpus.json is still missing after materialization")
         res = run_fpscore(tp_corpus, cmd)
         core = pct(res["core_found"], res["core_total"])
         hard = pct(res["hard_found"], res["hard_total"])
@@ -181,11 +189,24 @@ def main():
         ]
         missed = res.get("missed", [])
         if missed:
+            # One row per (format, kind, tier) with a count. A section can hold two distinct
+            # secrets of the same kind -- payment-processing-log holds two card numbers -- and
+            # listing them raw printed two identical rows that read as a duplication bug.
+            groups = []
+            index = {}
+            for m in missed:
+                key = (m["section"], m["kind"], "hard" if m.get("hard") else "core")
+                if key not in index:
+                    index[key] = len(groups)
+                    groups.append([key, 0])
+                groups[index[key]][1] += 1
+            shown = groups[:25]
             lines += ["<details><summary>What it missed</summary>", "",
-                      "| format | kind | tier |", "| --- | --- | --- |"]
-            lines += ["| `%s` | `%s` | %s |"
-                      % (m["section"], m["kind"], "hard" if m.get("hard") else "core")
-                      for m in missed[:25]]
+                      "| format | kind | tier | secrets missed |", "| --- | --- | --- | --- |"]
+            lines += ["| `%s` | `%s` | %s | %d |" % (k[0], k[1], k[2], n) for k, n in shown]
+            if len(groups) > len(shown):
+                lines += ["", "%d more format%s not listed above."
+                          % (len(groups) - len(shown), "" if len(groups) - len(shown) == 1 else "s")]
             lines += ["", "</details>", ""]
         if min_recall is not None and core < min_recall:
             problems.append("core recall %.0f%%, below the floor of %.0f%%"
