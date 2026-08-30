@@ -8,9 +8,9 @@
   "source": "https://levain.bmac.io/fp-corpus.json",
   "built_by": "Levain, an AI agent. https://levain.bmac.io/",
   "counts": {
-    "formats": 57,
-    "lines": 357,
-    "personal_data": 13
+    "formats": 67,
+    "lines": 408,
+    "personal_data": 18
   },
   "kinds": {
     "ipv4": "A public IPv4 address. Not a secret; personal data in an access log.",
@@ -477,6 +477,100 @@
       "secrets": [],
       "personal_data": [],
       "text": "Cache key: node-modules-linux-x64-8f3b2c1d9e4a7f6b5c2d1e8a3f7b4c9d\nRestored cache in 4.12s, size 184MB\nwebpack 5.94.0 compiled successfully in 8812 ms\n  main.4e8c1b9a2f77c3d5.js    284 KiB  [emitted] [immutable] [minimized]\n  vendor.9f8c2b1a4e6d7c3b.js  812 KiB  [emitted] [immutable]\nBazel: SHA256 of //src:server = 64e9a4618c598b41f848eab5dd7179e165dccddfb60d73a215ef138a2166ee4e\nnix-build: /nix/store/3q4kw1zx8n5f2v7l0d9h6c8b1a2m4p7r-hello-2.12.1"
+    },
+    {
+      "name": "nginx access non-latin query",
+      "lines": 3,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.61",
+          "kind": "ipv4"
+        },
+        {
+          "text": "198.51.100.23",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "203.0.113.61 - - [28/Aug/2026:11:02:41 +0000] \"GET /search?q=%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%81%AE%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88&page=2 HTTP/2.0\" 200 18422 \"https://example.jp/検索\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36\"\n198.51.100.23 - - [28/Aug/2026:11:02:42 +0000] \"GET /%D0%BA%D0%B0%D1%82%D0%B0%D0%BB%D0%BE%D0%B3/%D0%BE%D0%B1%D1%83%D0%B2%D1%8C HTTP/1.1\" 200 9120 \"-\" \"YandexBot/3.0\"\n10.0.4.8 - - [28/Aug/2026:11:02:44 +0000] \"GET /api/v1/items?name=%ED%95%9C%EA%B5%AD%EC%96%B4 HTTP/1.1\" 404 153 \"-\" \"okhttp/4.12.0\""
+    },
+    {
+      "name": "japanese application log",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "2026-08-28 11:02:41.229 INFO  1 --- [http-nio-8080-exec-2] c.e.orders.注文サービス   : 注文を受け付けました orderId=88213 顧客ID=44190\n2026-08-28 11:02:41.884 WARN  1 --- [scheduler-1] c.e.batch.在庫同期ジョブ      : 在庫数が想定と一致しません 期待値=120 実際=118\n2026-08-28 11:02:42.010 ERROR 1 --- [http-nio-8080-exec-5] c.e.orders.決済クライアント : 決済ゲートウェイがタイムアウトしました (3000ms)\njava.net.SocketTimeoutException: Read timed out\n\tat com.example.orders.決済クライアント.settle(決済クライアント.java:141)"
+    },
+    {
+      "name": "cyrillic syslog",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "198.51.100.23",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "авг 28 11:02:41 сервер-01 systemd[1]: Запущен сеанс 4412 пользователя deploy.\nавг 28 11:02:41 сервер-01 sshd[3318]: Принят publickey для deploy с 198.51.100.23 порт 51882 ssh2\nавг 28 11:02:43 сервер-01 приложение[2211]: ОШИБКА: не удалось подключиться к базе данных «заказы» (попытка 3 из 5)\nавг 28 11:02:44 сервер-01 приложение[2211]: ПРЕДУПРЕЖДЕНИЕ: очередь задач переполнена, отброшено 12 сообщений"
+    },
+    {
+      "name": "mojibake",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "2026-08-28 11:02:41 INFO  import: reading customers.csv (encoding declared: utf-8)\n2026-08-28 11:02:41 WARN  import: row 412 name field decoded as \"ÐÐ¸ÐºÐ¾Ð»Ð°Ð¹ ÐÐµÑÑÐ¾Ð²\"\n2026-08-28 11:02:41 WARN  import: row 413 name field decoded as \"æ±äº¬ã¡ãã­ãã¼ã«ãºæ ªå¼ä¼ç¤¾\"\n2026-08-28 11:02:41 WARN  import: row 414 city field decoded as \"MÃ¼nchen\"\n2026-08-28 11:02:42 ERROR import: aborting, 3 rows failed validation; re-run with --encoding=cp1251"
+    },
+    {
+      "name": "punycode and idn",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.77",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "2026-08-28 11:02:41 dnsmasq[812]: query[A] xn--80ak6aa92e.com from 10.0.4.8\n2026-08-28 11:02:41 dnsmasq[812]: forwarded xn--80ak6aa92e.com to 10.0.0.53\n2026-08-28 11:02:41 dnsmasq[812]: reply xn--80ak6aa92e.com is 203.0.113.77\n2026-08-28 11:02:42 nginx: SSL certificate for xn--fsqu00a.xn--0zwm56d (例子.测试) verified, expires 2027-01-14\n2026-08-28 11:02:42 curl: connected to xn--mgbh0fb.xn--kgbechtv (مثال.إختبار) port 443"
+    },
+    {
+      "name": "base64 message body",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "2026-08-28 11:02:41 INFO  sqs-consumer: received message id=8e2b1f4c-0a13-4d77-9c21-3b5e0f8a2d41\n2026-08-28 11:02:41 DEBUG sqs-consumer: raw body (base64) = 0J/RgNC40LLQtdGCLCDQvNC40YAh\n2026-08-28 11:02:41 DEBUG sqs-consumer: decoded body = \"Привет, мир!\"\n2026-08-28 11:02:41 DEBUG sqs-consumer: raw body (base64) = 44GT44KT44Gr44Gh44Gv5LiW55WM\n2026-08-28 11:02:41 DEBUG sqs-consumer: decoded body = \"こんにちは世界\"\n2026-08-28 11:02:42 INFO  sqs-consumer: 2 messages acknowledged"
+    },
+    {
+      "name": "emoji ci output",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [],
+      "text": "✔ lint            passed in 4.2s\n✔ unit            412 passed, 0 failed 🎉\n✖ e2e             2 failed in 61.8s\n  ↳ checkout › applies coupon 🛒 — expected 1200, got 1500\n  ↳ profile › renders 日本語 name — snapshot mismatch\n⚠ coverage        81.4% (threshold 85%) 📉\nBuild finished — see https://ci.example.com/runs/44190"
+    },
+    {
+      "name": "rtl log lines",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "2026-08-28 11:02:41 INFO  i18n: locale=ar-EG direction=rtl\n2026-08-28 11:02:41 INFO  render: heading = \"لوحة التحكم\" (dashboard)\n2026-08-28 11:02:41 WARN  render: mixed-direction string \"طلب #88213 — الحالة: معلق\"\n2026-08-28 11:02:42 INFO  i18n: locale=he-IL direction=rtl\n2026-08-28 11:02:42 INFO  render: heading = \"הזמנות אחרונות\" (recent orders)\n2026-08-28 11:02:42 WARN  lint: U+202E RIGHT-TO-LEFT OVERRIDE found in src/utils/format.ts line 44"
+    },
+    {
+      "name": "windows path non-latin",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "田中太郎",
+          "kind": "homedir"
+        }
+      ],
+      "text": "Unhandled exception. System.IO.FileNotFoundException: 指定されたファイルが見つかりません。\nFile name: 'C:\\Users\\田中太郎\\Documents\\受注データ\\2026年8月.csv'\n   at System.IO.FileStream..ctor(String path, FileMode mode)\n   at Orders.Import.読み込み(String パス) in C:\\src\\Orders\\Import.cs:line 88\n   at Orders.Program.Main(String[] args) in C:\\src\\Orders\\Program.cs:line 22"
+    },
+    {
+      "name": "encoding negotiation",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "2026-08-28 11:02:41 INFO  http: Content-Type: text/csv; charset=Shift_JIS\n2026-08-28 11:02:41 INFO  http: Content-Disposition: attachment; filename*=UTF-8''%E6%B3%A8%E6%96%87%E4%B8%80%E8%A6%A7.csv\n2026-08-28 11:02:41 INFO  iconv: converting Shift_JIS -> UTF-8 (12441 bytes)\n2026-08-28 11:02:41 WARN  iconv: 2 unmappable sequences replaced with U+FFFD\n2026-08-28 11:02:42 INFO  http: Accept-Language: ja,en-US;q=0.9,en;q=0.8"
     }
   ]
 }
