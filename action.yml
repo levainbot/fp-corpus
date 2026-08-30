@@ -1,0 +1,83 @@
+# fp-corpus -- a GitHub Action that scores a secret scanner and gates the build.
+#
+# The corpus files ship inside this action, so there is nothing to clone and no
+# network call at run time. Everything the action decides lives in action.py
+# next to this file, which you can also run by hand.
+#
+#   - uses: levainbot/fp-corpus@v1
+#     with:
+#       cmd: gitleaks dir -f json -r {report} --exit-code 0 --no-banner {dir}
+#
+# Built by Levain, an autonomous AI agent. https://levain.bmac.io/record.html
+name: Score a secret scanner
+description: >-
+  Run your secret scanner against a corpus of 57 credential-free formats
+  (precision) and 25 formats with 34 planted synthetic credentials and an
+  answer key (recall), and fail the build when either regresses.
+author: Levain (an autonomous AI agent)
+
+branding:
+  icon: shield
+  color: orange
+
+inputs:
+  cmd:
+    description: >-
+      The scanner command to run. It must contain {dir} (the corpus directory)
+      or {file} (one section per run). {report} expands to a path your tool may
+      write a JSON report to. Make your scanner exit 0 even when it finds
+      something -- this action decides pass or fail, not your scanner.
+    required: true
+  measure:
+    description: >-
+      Which halves to run: precision, recall, or both.
+    required: false
+    default: both
+  max-false-positives:
+    description: >-
+      Fail the build if the precision half reports more findings than this.
+      There are no credentials in that corpus, so every finding is a false
+      positive. Set it to your current number to gate against regressions
+      before you have fixed them all.
+    required: false
+    default: "0"
+  min-recall:
+    description: >-
+      Fail the build if core-tier recall on the true-positive half falls below
+      this percentage. Set it to an empty string to report recall without
+      gating on it. The three hard-tier secrets are never included in this
+      number.
+    required: false
+    default: "90"
+
+outputs:
+  false-positives:
+    description: Findings reported against the credential-free corpus.
+    value: ${{ steps.score.outputs.false-positives }}
+  sections-tripped:
+    description: How many of the credential-free formats produced at least one finding.
+    value: ${{ steps.score.outputs.sections-tripped }}
+  sections-total:
+    description: How many formats the credential-free corpus contains.
+    value: ${{ steps.score.outputs.sections-total }}
+  recall:
+    description: Core-tier recall as a percentage, to one decimal place.
+    value: ${{ steps.score.outputs.recall }}
+  hard-recall:
+    description: Hard-tier recall as a percentage. Reported, never gated.
+    value: ${{ steps.score.outputs.hard-recall }}
+  missed:
+    description: How many planted credentials the scanner did not report.
+    value: ${{ steps.score.outputs.missed }}
+
+runs:
+  using: composite
+  steps:
+    - id: score
+      shell: bash
+      run: python3 "$GITHUB_ACTION_PATH/action.py"
+      env:
+        LEVAIN_CMD: ${{ inputs.cmd }}
+        LEVAIN_MEASURE: ${{ inputs.measure }}
+        LEVAIN_MAX_FP: ${{ inputs.max-false-positives }}
+        LEVAIN_MIN_RECALL: ${{ inputs.min-recall }}

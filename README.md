@@ -175,6 +175,60 @@ good news.
 It publishes no scoreboard and it never phones anywhere. The only number it prints
 is yours.
 
+## In CI, as a GitHub Action
+
+Scoring a scanner once tells you where it stands today. Keeping it scored is what
+stops the next detector you add from quietly costing you precision. This repository
+**is** the action — point a workflow at it and it runs both halves and gates the
+build:
+
+```yaml
+- uses: levainbot/fp-corpus@v1
+  with:
+    cmd: gitleaks dir -f json -r {report} --exit-code 0 --no-banner {dir}
+```
+
+That is the whole configuration. There is nothing to clone and no network call at
+run time: the corpus files ship inside the action. It writes a table into the
+job summary — false positives, which formats tripped, core and hard recall, and
+every planted credential your scanner missed by name.
+
+| input | default | what it does |
+| --- | --- | --- |
+| `cmd` | *required* | your scanner, with `{dir}`, `{file}` or `{report}` |
+| `measure` | `both` | `precision`, `recall` or `both` |
+| `max-false-positives` | `0` | fail above this many findings on the silent corpus |
+| `min-recall` | `90` | fail below this core-tier recall; empty reports without gating |
+
+Outputs: `false-positives`, `sections-tripped`, `sections-total`, `recall`,
+`hard-recall`, `missed`.
+
+**Adopting it on a scanner that is not clean yet** is the normal case, and the
+gates are built for it. Set `max-false-positives` to whatever you score today and
+`min-recall` to whatever you score today: the build stays green, and it goes red
+the first time a change makes either number worse. Ratchet them as you fix things.
+
+Two things worth knowing before you trust a green run:
+
+- **Make your scanner exit 0 whatever it finds — including nothing.** The action
+  decides pass or fail, not your scanner. `gitleaks` needs `--exit-code 0`. A
+  command that exits non-zero having reported nothing cannot be told apart from
+  one that never ran, so it is treated as a failure; that is why bare `grep` is
+  not a usable scanner command here.
+- **A scan that did not run is a failure, never a score of zero.** If your command
+  is wrong, or the binary is missing, the build goes red and says so. This is the
+  one result the action will never report as a pass, because a flawless zero from a
+  command that exited 127 is the exact shape of a gate that has stopped working.
+
+Everything the action decides lives in [`action.py`](action.py), stdlib only. You
+can run it outside CI, with no runner involved:
+
+```sh
+LEVAIN_CMD='gitleaks dir -f json -r {report} --exit-code 0 {dir}' \
+LEVAIN_MEASURE=both LEVAIN_MAX_FP=0 LEVAIN_MIN_RECALL=90 \
+python3 action.py
+```
+
 ## What is in it
 
 `nginx access` · `apache error` · `syslog` · `systemd journal` · `java stacktrace` · `python traceback` · `node stacktrace` · `npm install` · `pip install` · `git output` · `git clean` · `docker` · `kubernetes` · `json log` · `sql log` · `http headers` · `prometheus` · `webpack build` · `test runner` · `csv data` · `dmesg` · `terraform plan` · `config file (placeholders)` · `prose` · `github actions` · `go test` · `cargo build` · `rails log` · `laravel log` · `dotnet stack` · `powershell` · `curl verbose` · `aws cli` · `mongo / redis` · `yarn / pnpm` · `nginx error` · `elasticsearch` · `terminal / homebrew` · `jest / vitest` · `minified js` · `minified css` · `source map` · `css data uri` · `html head` · `package-lock json` · `docker digests` · `pem certificate` · `ssh public keys` · `known_hosts and fingerprints` · `terraform lock` · `api json response` · `hexdump` · `go and gradle checksums` · `ci env dump (masked)` · `aws signed request headers` · `kubernetes manifest` · `build hashes and cache keys`
