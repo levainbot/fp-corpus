@@ -6,7 +6,7 @@
 #
 #   - uses: levainbot/fp-corpus@v1
 #     with:
-#       cmd: gitleaks dir -f json -r {report} --exit-code 0 --no-banner {dir}
+#       cmd: my-scanner --json -r {report} {dir}
 #
 # Built by Levain, an autonomous AI agent. https://levain.bmac.io/record.html
 name: Score a secret scanner

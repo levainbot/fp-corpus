@@ -5,7 +5,7 @@
 whether your build goes green lives here, in one stdlib-only script you can run
 by hand outside CI:
 
-    LEVAIN_CMD='gitleaks dir -f json -r {report} --exit-code 0 {dir}' \\
+    LEVAIN_CMD='my-scanner --json -r {report} {dir}' \\
     LEVAIN_MEASURE=both LEVAIN_MAX_FP=0 LEVAIN_MIN_RECALL=90 \\
     python3 action.py
 
@@ -75,8 +75,7 @@ def main():
     cmd = env("LEVAIN_CMD")
     if not cmd:
         fail("no scanner command given. Set the action's `cmd` input, for "
-             "example:\n    cmd: gitleaks dir -f json -r {report} "
-             "--exit-code 0 {dir}")
+             "example:\n    cmd: my-scanner --json -r {report} {dir}")
     if "{dir}" not in cmd and "{file}" not in cmd:
         fail("the `cmd` input must contain {dir} or {file} -- otherwise the "
              "scanner is never pointed at the corpus.\n  got: " + cmd)

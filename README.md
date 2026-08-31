@@ -1,14 +1,14 @@
 # fp-corpus
 
 **A complete test set for a secret scanner: 71 formats that must stay silent,
-and 30 that must not.**
+and 36 that must not.**
 
 - `fp-corpus` — 71 formats, 449 lines of completely ordinary log and build
   output containing no credential of any kind. Every secret your scanner reports
   against it is a false positive. That is true independently of any tool: there is
   nothing in here to find. **This is precision.**
-- `tp-corpus` — 30 formats of the places credentials actually escape from, with
-  61 synthetic credentials planted in them and an answer key saying exactly which
+- `tp-corpus` — 36 formats of the places credentials actually escape from, with
+  70 synthetic credentials planted in them and an answer key saying exactly which
   string in which section. Everything your scanner does not report is a miss.
   **This is recall.**
 
@@ -44,7 +44,7 @@ its fix, at [https://levain.bmac.io/false-positives.html](https://levain.bmac.io
 | --- | --- |
 | [`fp-corpus.txt`](fp-corpus.txt) | plain text, sections delimited by `===== name =====`. Vendor it into any project, in any language. |
 | [`fp-corpus.json`](fp-corpus.json) | the same bytes with the verdict attached, so it can be scored in CI instead of read by eye. |
-| [`tp-corpus.txt.b64`](tp-corpus.txt.b64) | the true-positive half: 30 formats that DO leak, 61 planted credentials, same delimiter. Base64 — run `materialize.py` first, see below. |
+| [`tp-corpus.txt.b64`](tp-corpus.txt.b64) | the true-positive half: 36 formats that DO leak, 70 planted credentials, same delimiter. Base64 — run `materialize.py` first, see below. |
 | [`tp-corpus.json.b64`](tp-corpus.json.b64) | the same bytes with the answer key: which exact string in which section is the secret. Base64 too. |
 | [`materialize.py`](materialize.py) | decodes both of the above and checks each against a recorded sha256. Stdlib only. |
 | [`fpscore.py`](fpscore.py) | the runner: points any scanner at either corpus and tells you which sections it tripped on, or which secrets it missed. Python 3.8+, stdlib only, MIT. |
@@ -133,9 +133,7 @@ it, reads the findings back out of the output, and tells you which section each
 one came from:
 
 ```sh
-python3 fpscore.py --cmd 'gitleaks dir -f json -r {report} --exit-code 0 {dir}'
-python3 fpscore.py --cmd 'trufflehog filesystem {dir} --json'
-python3 fpscore.py --cmd 'detect-secrets scan {dir}'
+python3 fpscore.py --cmd 'my-scanner --json -r {report} {dir}'
 python3 fpscore.py --cmd 'my-scanner {file}'      # {file} runs once per section
 ```
 
@@ -185,7 +183,7 @@ build:
 ```yaml
 - uses: levainbot/fp-corpus@v1
   with:
-    cmd: gitleaks dir -f json -r {report} --exit-code 0 --no-banner {dir}
+    cmd: my-scanner --json -r {report} {dir}
 ```
 
 That is the whole configuration. There is nothing to clone and no network call at
@@ -211,7 +209,7 @@ the first time a change makes either number worse. Ratchet them as you fix thing
 Two things worth knowing before you trust a green run:
 
 - **Make your scanner exit 0 whatever it finds — including nothing.** The action
-  decides pass or fail, not your scanner. `gitleaks` needs `--exit-code 0`. A
+  decides pass or fail, not your scanner. Most scanners have a flag for this. A
   command that exits non-zero having reported nothing cannot be told apart from
   one that never ran, so it is treated as a failure; that is why bare `grep` is
   not a usable scanner command here.
@@ -224,7 +222,7 @@ Everything the action decides lives in [`action.py`](action.py), stdlib only. Yo
 can run it outside CI, with no runner involved:
 
 ```sh
-LEVAIN_CMD='gitleaks dir -f json -r {report} --exit-code 0 {dir}' \
+LEVAIN_CMD='my-scanner --json -r {report} {dir}' \
 LEVAIN_MEASURE=both LEVAIN_MAX_FP=0 LEVAIN_MIN_RECALL=90 \
 python3 action.py
 ```

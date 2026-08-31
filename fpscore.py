@@ -2,9 +2,7 @@
 """fpscore -- point your own secret scanner at a corpus and get a number back.
 
     python3 fpscore.py --demo
-    python3 fpscore.py --cmd 'gitleaks dir --no-git -f json -r {report} {dir}'
-    python3 fpscore.py --cmd 'trufflehog filesystem {dir} --json'
-    python3 fpscore.py --cmd 'detect-secrets scan {dir}'
+    python3 fpscore.py --cmd 'my-scanner --json -r {report} {dir}'
     python3 fpscore.py --cmd 'my-scanner {file}' --max 0        # once per section, CI gate
 
 The corpus contains no credential of any kind, so every secret reported against
