@@ -1,6 +1,6 @@
 # A false-positive corpus for secret scanners
 #
-# 71 formats of ordinary log, build and CLI output. 449 non-blank lines.
+# 89 formats of ordinary log, build and CLI output. 598 non-blank lines.
 # There is no credential anywhere in this file. Not one. Every string that looks
 # like it might be is a version number, a content hash, a commit id, a placeholder
 # or a public documentation address.
@@ -14,7 +14,7 @@
 # IP addresses use the RFC 5737 documentation ranges; hostnames use example.com.
 # Some of those ARE meant to be flagged by a redactor (an IP is not a secret but
 # it is often personal data) -- see the notes at levain.bmac.io/false-positives.html
-# for the 21 spans the tool that found them still flags, and why each is deliberate.
+# for the 40 spans the tool that found them still flags, and why each is deliberate.
 #
 # MIT licensed. Copy it, extend it, vendor it into your own test suite.
 # Source: https://levain.bmac.io/fp-corpus.txt
@@ -616,3 +616,188 @@ File name: 'C:\Users\田中太郎\Documents\受注データ\2026年8月.csv'
     <Data Name="IpPort">50412</Data>
   </EventData>
 </Event>
+
+===== haproxy log =====
+Aug 31 09:14:02 lb-01 haproxy[2213]: 203.0.113.42:54118 [31/Aug/2026:09:14:02.117] https-in~ api-backend/web-03 0/0/1/28/29 200 4213 - - ---- 214/214/12/3/0 0/0 "GET /api/v2/orders?page=3 HTTP/2.0"
+Aug 31 09:14:03 lb-01 haproxy[2213]: 198.51.100.7:39442 [31/Aug/2026:09:14:03.004] https-in~ api-backend/<NOSRV> 0/-1/-1/-1/3001 503 217 - - SC-- 214/214/0/0/3 0/0 "POST /api/v2/checkout HTTP/1.1"
+Aug 31 09:14:04 lb-01 haproxy[2213]: Server api-backend/web-03 is DOWN, reason: Layer4 timeout, check duration: 2001ms. 2 active and 0 backup servers left.
+Aug 31 09:14:31 lb-01 haproxy[2213]: Server api-backend/web-03 is UP, reason: Layer7 check passed, code: 200, check duration: 12ms. 3 active and 0 backup servers online.
+
+===== envoy access log =====
+[2026-08-31T09:14:02.881Z] "GET /api/v2/orders?page=3 HTTP/2" 200 - 0 4213 29 26 "203.0.113.42" "grpc-go/1.62.0" "9f1c2b44-77aa-4c31-9d20-0e1b3a55c901" "api.example.com" "10.4.2.19:8080"
+[2026-08-31T09:14:03.004Z] "POST /api/v2/checkout HTTP/2" 503 UF 512 91 3001 - "198.51.100.7" "okhttp/4.12.0" "b7d1f0e2-3c48-4a19-8f55-2ad9c0e14b73" "api.example.com" "10.4.2.21:8080"
+[2026-08-31 09:14:03.010][21][debug][router] [source/common/router/router.cc:1361] [C4812][S8821304412990117223] upstream reset: reset reason: connection failure, transport failure reason: delayed connect error: 111
+[2026-08-31 09:14:05.117][19][info][upstream] [source/common/upstream/cds_api_helper.cc:32] cds: add 4 cluster(s), remove 1 cluster(s)
+
+===== kafka broker log =====
+[2026-08-31 09:14:02,881] INFO [GroupCoordinator 3]: Preparing to rebalance group orders-consumer in state PreparingRebalance with old generation 41 (__consumer_offsets-27) (kafka.coordinator.group.GroupCoordinator)
+[2026-08-31 09:14:03,102] INFO [GroupCoordinator 3]: Stabilized group orders-consumer generation 42 (__consumer_offsets-27) with 4 members (kafka.coordinator.group.GroupCoordinator)
+[2026-08-31 09:14:04,551] WARN [ReplicaFetcher replicaId=3, leaderId=1, fetcherId=0] Received UNKNOWN_TOPIC_ID from the leader for partition events-12 (kafka.server.ReplicaFetcherThread)
+[2026-08-31 09:14:09,338] INFO [UnifiedLog partition=events-12, dir=/var/lib/kafka/data] Rolled new log segment at offset 88213004 in 3 ms. (kafka.log.UnifiedLog)
+[2026-08-31 09:14:12,004] INFO [Controller id=1] Newly added brokers: , deleted brokers: 4, bounced brokers: , all live brokers: 1,2,3 (kafka.controller.KafkaController)
+
+===== postfix mail log =====
+Aug 31 09:14:02 mail-01 postfix/smtpd[24815]: connect from mx.example.net[203.0.113.42]
+Aug 31 09:14:02 mail-01 postfix/smtpd[24815]: 3F2B8C9E1D: client=mx.example.net[203.0.113.42]
+Aug 31 09:14:02 mail-01 postfix/cleanup[24817]: 3F2B8C9E1D: message-id=<20260831091402.3F2B8C9E1D@mail.example.com>
+Aug 31 09:14:03 mail-01 postfix/qmgr[1188]: 3F2B8C9E1D: from=<noreply@example.com>, size=4213, nrcpt=1 (queue active)
+Aug 31 09:14:04 mail-01 postfix/smtp[24820]: 3F2B8C9E1D: to=<dana@example.com>, relay=mx1.example.org[198.51.100.7]:25, delay=1.9, delays=0.32/0/0.71/0.87, dsn=2.0.0, status=sent (250 2.0.0 OK)
+Aug 31 09:14:04 mail-01 postfix/qmgr[1188]: 3F2B8C9E1D: removed
+
+===== android logcat =====
+08-31 09:14:02.881  2481  2504 I ActivityManager: Start proc 8213:com.example.shop/u0a221 for activity {com.example.shop/.MainActivity}
+08-31 09:14:03.104  8213  8213 D OkHttp  : --> GET https://api.example.com/v2/orders?page=3 http/2.0
+08-31 09:14:03.442  8213  8240 W System.err: java.net.SocketTimeoutException: timeout after 3000ms
+08-31 09:14:03.999  2481  2495 E ANR     : ANR in com.example.shop (com.example.shop/.CartActivity), reason: Input dispatching timed out
+08-31 09:14:04.210  8213  8213 I Choreographer: Skipped 42 frames!  The application may be doing too much work on its main thread.
+
+===== ansible playbook =====
+TASK [Gathering Facts] *********************************************************
+ok: [web-01.example.com]
+TASK [nginx : template config] *************************************************
+changed: [web-01.example.com] => {"changed": true, "checksum": "3f2b8c9e1d4a7b60c5e8f9012a3b4c5d6e7f8091", "dest": "/etc/nginx/nginx.conf", "gid": 0, "group": "root", "mode": "0644", "size": 4213, "uid": 0}
+fatal: [web-02.example.com]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: ssh: connect to host 198.51.100.7 port 22: Connection timed out", "unreachable": true}
+PLAY RECAP *********************************************************************
+web-01.example.com         : ok=8    changed=1    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0
+
+===== maven build =====
+[INFO] --- maven-compiler-plugin:3.13.0:compile (default-compile) @ orders-service ---
+[INFO] Compiling 214 source files with javac [debug release 21] to target/classes
+[WARNING] /src/main/java/com/example/orders/OrderService.java:[214,28] [deprecation] settle(long) in OrderApi has been deprecated
+[INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.17.1/jackson-databind-2.17.1.jar
+[INFO] Installing /src/target/orders-service-4.2.1.jar to /root/.m2/repository/com/example/orders-service/4.2.1/orders-service-4.2.1.jar
+[INFO] BUILD SUCCESS
+[INFO] Total time:  01:12 min
+
+===== strace output =====
+openat(AT_FDCWD, "/etc/ssl/certs/ca-certificates.crt", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=213432, ...}) = 0
+mmap(NULL, 213432, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f3c8b41a000
+connect(7, {sa_family=AF_INET, sin_port=htons(443), sin_addr=inet_addr("203.0.113.42")}, 16) = -1 EINPROGRESS (Operation now in progress)
+epoll_wait(9, [{events=EPOLLOUT, data={u32=7, u64=7}}], 128, 5000) = 1
+write(7, "\26\3\1\2\0\1\0\1\374\3\3", 11) = 11
++++ exited with 0 +++
+
+===== ps aux and top =====
+top - 09:14:02 up 6 days,  2:11,  2 users,  load average: 1.42, 1.08, 0.94
+%Cpu(s):  8.3 us,  2.1 sy,  0.0 ni, 88.9 id,  0.4 wa,  0.0 hi,  0.3 si,  0.0 st
+MiB Mem :   7962.4 total,    412.8 free,   5218.1 used,   2331.5 buff/cache
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  0.0  0.1 168924 12844 ?        Ss   Aug25   0:41 /sbin/init
+app         2481  3.2  6.4 4213880 528412 ?      Sl   09:02   0:38 /usr/bin/java -Xmx2g -jar /srv/orders.jar --spring.profiles.active=prod
+app         2504  0.0  0.2  12884  4212 pts/0    R+   09:14   0:00 ps aux
+
+===== address sanitizer =====
+=================================================================
+==2481==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x60300000ef84 at pc 0x00010a3c2b41 bp 0x7ffee4a13b70 sp 0x7ffee4a13b68
+READ of size 4 at 0x60300000ef84 thread T0
+    #0 0x10a3c2b40 in parse_header codec/frame.c:214
+    #1 0x10a3c11a2 in decode_packet codec/frame.c:88
+0x60300000ef84 is located 0 bytes to the right of 20-byte region [0x60300000ef70,0x60300000ef84) allocated by thread T0 here:
+SUMMARY: AddressSanitizer: heap-buffer-overflow codec/frame.c:214 in parse_header
+
+===== aws lambda cloudwatch =====
+START RequestId: 5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e Version: $LATEST
+2026-08-31T09:14:02.881Z	5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e	INFO	cold start complete, region eu-west-1, runtime nodejs22.x
+2026-08-31T09:14:02.913Z	5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e	INFO	{"level":"info","msg":"settling order","order_id":88213,"trace":"Root=1-5759e988-bd862e3fe1be46a994272793;Parent=53995c3f42cd8ad8;Sampled=1"}
+2026-08-31T09:14:03.221Z	5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e	WARN	dynamodb ConditionalCheckFailedException on orders, retry 1 of 3
+END RequestId: 5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e
+REPORT RequestId: 5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e	Duration: 412.88 ms	Billed Duration: 413 ms	Memory Size: 512 MB	Max Memory Used: 118 MB	Init Duration: 284.12 ms	XRAY TraceId: 1-5759e988-bd862e3fe1be46a994272793	SegmentId: 53995c3f42cd8ad8	Sampled: true
+START RequestId: c8a1d70e-93b4-4f21-8bd6-0e5a2c19f334 Version: $LATEST
+END RequestId: c8a1d70e-93b4-4f21-8bd6-0e5a2c19f334
+REPORT RequestId: c8a1d70e-93b4-4f21-8bd6-0e5a2c19f334	Duration: 38.41 ms	Billed Duration: 39 ms	Memory Size: 512 MB	Max Memory Used: 119 MB
+
+===== opentelemetry span =====
+{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"orders-api"}},{"key":"service.version","value":{"stringValue":"2.14.0"}},{"key":"deployment.environment.name","value":{"stringValue":"production"}},{"key":"host.name","value":{"stringValue":"api-7c4f9d8b6-x2klm"}},{"key":"telemetry.sdk.language","value":{"stringValue":"go"}}]},
+"scopeSpans":[{"scope":{"name":"go.opentelemetry.io/otel/sdk/tracer","version":"1.34.0"},"spans":[
+{"traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"00f067aa0ba902b7","parentSpanId":"0000000000000000","name":"POST /api/v2/checkout","kind":2,"startTimeUnixNano":"1787840842881000000","endTimeUnixNano":"1787840843293000000","status":{"code":1}},
+{"traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"a1c3e5f709b2d4c6","parentSpanId":"00f067aa0ba902b7","name":"pg.query","attributes":[{"key":"db.system.name","value":{"stringValue":"postgresql"}},{"key":"db.query.text","value":{"stringValue":"SELECT * FROM orders WHERE id = $1"}}]}]}]}]}
+2026-08-31T09:14:03.301Z	info	exporterhelper@v0.118.0/queue_sender.go:97	exported 2 spans to otel-collector:4317 in 11.4ms
+2026-08-31T09:14:03.302Z	debug	propagation	traceparent=00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01 tracestate=vendor=t61rcWkgMzE
+
+===== tcpdump verbose =====
+tcpdump: listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+09:14:02.881342 IP 203.0.113.42.51234 > 10.0.1.15.443: Flags [S], seq 2891043771, win 65535, options [mss 1460,sackOK,TS val 3128841902 ecr 0,nop,wscale 10], length 0
+09:14:02.881501 IP 10.0.1.15.443 > 203.0.113.42.51234: Flags [S.], seq 1884210993, ack 2891043772, win 65160, options [mss 1460,sackOK,TS val 884213377 ecr 3128841902,nop,wscale 7], length 0
+09:14:02.913884 IP 10.0.1.15.8080 > 10.0.1.22.44118: Flags [P.], seq 1:242, ack 1, win 502, length 241: HTTP: HTTP/1.1 200 OK
+	0x0000:  4500 0119 3d8f 4000 4006 5b21 0a00 010f  E...=.@.@.[!....
+	0x0010:  0a00 0116 1f90 ac56 6b21 44a9 9e13 7c02  .......Vk!D...|.
+	0x0020:  8018 01f6 8f14 0000 0101 080a 34b2 91c1  ............4...
+	0x0030:  ba8c 1e77 4854 5450 2f31 2e31 2032 3030  ...wHTTP/1.1.200
+	0x0040:  204f 4b0d 0a63 6f6e 7465 6e74 2d74 7970  .OK..content-typ
+	0x0050:  653a 2061 7070 6c69 6361 7469 6f6e 2f6a  e:.application/j
+09:14:03.004112 IP 198.51.100.7.44118 > 10.0.1.15.8080: Flags [R.], seq 242, ack 242, win 0, length 0
+6 packets captured, 6 packets received by filter, 0 packets dropped by kernel
+
+===== nvidia-smi and training log =====
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 570.86.15              Driver Version: 570.86.15      CUDA Version: 12.8      |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+|   0  NVIDIA H100 80GB HBM3          On  |   00000000:8A:00.0 Off |                    0 |
+| N/A   61C    P0            412W /  700W |   68412MiB /  81559MiB |     98%      Default |
++-----------------------------------------+------------------------+----------------------+
+GPU 0: NVIDIA H100 80GB HBM3 (UUID: GPU-4d2c8f1e-7a93-4b06-9c5d-2e81f0a63b47)
+[2026-08-31 09:14:02,881] [INFO] [trainer.py:412] step 12400 | loss 1.8842 | lr 3.0e-05 | grad_norm 0.4127 | tok/s 41288 | mem 66.81GiB
+[2026-08-31 09:14:31,014] [INFO] [trainer.py:412] step 12500 | loss 1.8617 | lr 2.9e-05 | grad_norm 0.3988 | tok/s 41402 | mem 66.81GiB
+[2026-08-31 09:14:31,882] [INFO] [checkpoint.py:88] saved step-12500 to s3://ml-artifacts/orders-rerank/step-12500.safetensors
+[2026-08-31 09:14:31,884] [INFO] [checkpoint.py:91] sha256:7d0c9a1b4e2f8c3d5a6b0e7f1c2d9a8b3e4f5c6d7a8b9e0f1c2d3a4b5e6f7c8d
+
+===== tailscale and wireguard status =====
+$ tailscale status
+100.101.102.103 build-01             dana@        linux   active; direct 198.51.100.7:41641, tx 41284 rx 88213
+$ tailscale debug prefs | grep -i key
+        "NodeKey": "nodekey:9f8c2b1a4e6d7c3b5a8e2f1d4c9b7a6e3f2d1c8b0a9e7f6d5c4b3a2918e7d6c5",
+        "DiscoKey": "discokey:2b1c4e6d7a3b5c8e9f0d1a2c3b4e5f6a7d8c9b0e1f2a3c4d5e6f7a8b9c0d1e2",
+$ sudo wg show wg0
+interface: wg0
+  public key: HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw=
+  private key: (hidden)
+peer: xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=
+  endpoint: 198.51.100.7:51820
+$ tail -3 /etc/wireguard/wg0.conf
+[Peer]
+PublicKey = xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=
+AllowedIPs = 10.8.0.2/32
+
+===== sentry event json =====
+{"event_id":"9f8c2b1a4e6d7c3b5a8e2f1d4c9b7a6e","timestamp":"2026-08-31T09:14:02.881Z","platform":"javascript","level":"error",
+"release":"orders-web@2.14.0+9f8c2b1a4e6d7c3b5a8e2f1d4c9b7a6e3f2d1c8b","environment":"production","server_name":"api-7c4f9d8b6-x2klm",
+"contexts":{"trace":{"trace_id":"4bf92f3577b34da6a3ce929d0e0e4736","span_id":"00f067aa0ba902b7","op":"http.client","status":"internal_error"}},
+"exception":{"values":[{"type":"TypeError","value":"Cannot read properties of undefined (reading 'total')","stacktrace":{"frames":[{"filename":"app:///static/checkout.9f8c2b1a4e.js","lineno":88,"colno":21,"function":"settle","in_app":true}]}}]},
+"sdk":{"name":"sentry.javascript.browser","version":"9.4.0"},"tags":{"transaction":"/checkout","handled":"no"}}
+[Sentry] envelope 9f8c2b1a4e6d7c3b5a8e2f1d4c9b7a6e -> https://a3f9c21d8b7e4a6c9f0d2b1e4c7a5d38@o4507288.ingest.us.sentry.io/4507288
+[Sentry] 200 OK in 41ms, rate limit remaining 4998
+
+===== bun and uv install =====
+$ bun install
+bun install v1.2.19 (aa8bd1f2)
+ + @sentry/browser@9.4.0
+ + zod@3.24.2
+ + typescript@5.7.3 (dev)
+ 42 packages installed [1.28s]
+$ uv pip install -r requirements.txt
+Using CPython 3.13.1 interpreter at: /usr/bin/python3.13
+Resolved 34 packages in 214ms
+   Downloaded httpx==0.28.1 (sha256:6d1cb0d1b3f9d6bbf6f4bcbe8e21ee5b3e6e0a1e8db4b6d5b1a1f5aa2a1eb95c)
+   Downloaded pydantic==2.10.6 (https://files.pythonhosted.org/packages/6a/c1/pydantic-2.10.6-py3-none-any.whl#sha256=427d664bf0b8a2b34ff5dd0f5a18df00591adcee7198fbd71981054cef37b58)
+Prepared 6 packages in 1.02s
+Installed 6 packages in 88ms
+warning: `uv pip install` is experimental; prefer `uv add` for project dependencies
+
+===== grpcurl and protobuf =====
+$ grpcurl -v -d '{"order_id":"88213"}' api.example.com:443 orders.v2.Orders/Settle
+Resolved method descriptor:
+rpc Settle ( .orders.v2.SettleRequest ) returns ( .orders.v2.SettleResponse );
+Request metadata to send:
+(empty)
+Response headers received:
+content-type: application/grpc
+grpc-accept-encoding: identity, deflate, gzip
+x-envoy-upstream-service-time: 412
+Response contents:
+{ "orderId": "88213", "settledAt": "2026-08-31T09:14:02.881Z", "receipt": "CggIkOjTvAYQABIQOWY4YzJiMWE0ZTZkN2MzYhoDVVNE" }
+Response trailers received:
+grpc-status-details-bin: CAgSHW9yZGVyIDg4MjEzIGFscmVhZHkgc2V0dGxlZBoA
+$ protoc --include_imports --descriptor_set_out=orders.pb orders/v2/orders.proto
+orders/v2/orders.proto: descriptor set written, 4 file(s), 11284 bytes

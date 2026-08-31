@@ -1,14 +1,14 @@
 # fp-corpus
 
-**A complete test set for a secret scanner: 71 formats that must stay silent,
-and 36 that must not.**
+**A complete test set for a secret scanner: 89 formats that must stay silent,
+and 37 that must not.**
 
-- `fp-corpus` — 71 formats, 449 lines of completely ordinary log and build
+- `fp-corpus` — 89 formats, 598 lines of completely ordinary log and build
   output containing no credential of any kind. Every secret your scanner reports
   against it is a false positive. That is true independently of any tool: there is
   nothing in here to find. **This is precision.**
-- `tp-corpus` — 36 formats of the places credentials actually escape from, with
-  70 synthetic credentials planted in them and an answer key saying exactly which
+- `tp-corpus` — 37 formats of the places credentials actually escape from, with
+  71 synthetic credentials planted in them and an answer key saying exactly which
   string in which section. Everything your scanner does not report is a miss.
   **This is recall.**
 
@@ -33,7 +33,7 @@ half nobody builds, and it is where scanners actually annoy people: an SSH host
 key fingerprint, an npm `sha512-` integrity hash, a git commit SHA, a minified
 bundle, a base64 data URI, a certificate. All high-entropy. None of them secrets.
 
-Running this corpus through my own redactor found **10 real defects** in it,
+Running this corpus through my own redactor found **11 real defects** in it,
 including one that read every `Author:` line in `git log` as a credential and one
 that read Chrome's User-Agent string as an IP address. Each is written up, with
 its fix, at [https://levain.bmac.io/false-positives.html](https://levain.bmac.io/false-positives.html).
@@ -44,15 +44,15 @@ its fix, at [https://levain.bmac.io/false-positives.html](https://levain.bmac.io
 | --- | --- |
 | [`fp-corpus.txt`](fp-corpus.txt) | plain text, sections delimited by `===== name =====`. Vendor it into any project, in any language. |
 | [`fp-corpus.json`](fp-corpus.json) | the same bytes with the verdict attached, so it can be scored in CI instead of read by eye. |
-| [`tp-corpus.txt.b64`](tp-corpus.txt.b64) | the true-positive half: 36 formats that DO leak, 70 planted credentials, same delimiter. Base64 — run `materialize.py` first, see below. |
+| [`tp-corpus.txt.b64`](tp-corpus.txt.b64) | the true-positive half: 37 formats that DO leak, 71 planted credentials, same delimiter. Base64 — run `materialize.py` first, see below. |
 | [`tp-corpus.json.b64`](tp-corpus.json.b64) | the same bytes with the answer key: which exact string in which section is the secret. Base64 too. |
 | [`materialize.py`](materialize.py) | decodes both of the above and checks each against a recorded sha256. Stdlib only. |
 | [`fpscore.py`](fpscore.py) | the runner: points any scanner at either corpus and tells you which sections it tripped on, or which secrets it missed. Python 3.8+, stdlib only, MIT. |
 
 The JSON gives each section two fields:
 
-- **`secrets`** — always empty, on all 71 sections. That is the universal claim.
-- **`personal_data`** — the 21 non-secret spans a redactor may legitimately mask
+- **`secrets`** — always empty, on all 89 sections. That is the universal claim.
+- **`personal_data`** — the 40 non-secret spans a redactor may legitimately mask
   (public IPs, email addresses, a username in a home-directory path). Subtract them
   if your tool does PII as well as secrets; otherwise ignore the field.
 
@@ -128,7 +128,7 @@ ordinary output does to a first-draft detector before you point your real one at
 
 ### Or point your own scanner at it, without writing any of that
 
-`fpscore.py` writes the 71 sections out as files, runs whatever command you give
+`fpscore.py` writes the 89 sections out as files, runs whatever command you give
 it, reads the findings back out of the output, and tells you which section each
 one came from:
 
@@ -142,16 +142,16 @@ so you can see the shape of the answer before you trust it with your own:
 
 ```
 $ python3 fpscore.py --demo
-corpus: 71 sections, 449 lines, 0 credentials.
-read:   65 finding(s) via built-in straw-man scanner
+corpus: 89 sections, 598 lines, 0 credentials.
+read:   87 finding(s) via built-in straw-man scanner
 
-FALSE POSITIVES: 65, across 21 of 71 sections
-personal-data matches (not counted): 0
+FALSE POSITIVES: 86, across 29 of 89 sections
+personal-data matches (not counted): 1
 
 worst sections:
     23  pem certificate
      5  go and gradle checksums
-     4  known_hosts and fingerprints
+     5  tailscale and wireguard status
 ```
 
 There is no per-tool adapter and there is nothing to configure. Findings are
@@ -229,7 +229,7 @@ python3 action.py
 
 ## What is in it
 
-`nginx access` · `apache error` · `syslog` · `systemd journal` · `java stacktrace` · `python traceback` · `node stacktrace` · `npm install` · `pip install` · `git output` · `git clean` · `docker` · `kubernetes` · `json log` · `sql log` · `http headers` · `prometheus` · `webpack build` · `test runner` · `csv data` · `dmesg` · `terraform plan` · `config file (placeholders)` · `prose` · `github actions` · `go test` · `cargo build` · `rails log` · `laravel log` · `dotnet stack` · `powershell` · `curl verbose` · `aws cli` · `mongo / redis` · `yarn / pnpm` · `nginx error` · `elasticsearch` · `terminal / homebrew` · `jest / vitest` · `minified js` · `minified css` · `source map` · `css data uri` · `html head` · `package-lock json` · `docker digests` · `pem certificate` · `ssh public keys` · `known_hosts and fingerprints` · `terraform lock` · `api json response` · `hexdump` · `go and gradle checksums` · `ci env dump (masked)` · `aws signed request headers` · `kubernetes manifest` · `build hashes and cache keys` · `nginx access non-latin query` · `japanese application log` · `cyrillic syslog` · `mojibake` · `punycode and idn` · `base64 message body` · `emoji ci output` · `rtl log lines` · `windows path non-latin` · `encoding negotiation` · `thai app log` · `devanagari app log` · `vietnamese app log` · `windows event log xml`
+`nginx access` · `apache error` · `syslog` · `systemd journal` · `java stacktrace` · `python traceback` · `node stacktrace` · `npm install` · `pip install` · `git output` · `git clean` · `docker` · `kubernetes` · `json log` · `sql log` · `http headers` · `prometheus` · `webpack build` · `test runner` · `csv data` · `dmesg` · `terraform plan` · `config file (placeholders)` · `prose` · `github actions` · `go test` · `cargo build` · `rails log` · `laravel log` · `dotnet stack` · `powershell` · `curl verbose` · `aws cli` · `mongo / redis` · `yarn / pnpm` · `nginx error` · `elasticsearch` · `terminal / homebrew` · `jest / vitest` · `minified js` · `minified css` · `source map` · `css data uri` · `html head` · `package-lock json` · `docker digests` · `pem certificate` · `ssh public keys` · `known_hosts and fingerprints` · `terraform lock` · `api json response` · `hexdump` · `go and gradle checksums` · `ci env dump (masked)` · `aws signed request headers` · `kubernetes manifest` · `build hashes and cache keys` · `nginx access non-latin query` · `japanese application log` · `cyrillic syslog` · `mojibake` · `punycode and idn` · `base64 message body` · `emoji ci output` · `rtl log lines` · `windows path non-latin` · `encoding negotiation` · `thai app log` · `devanagari app log` · `vietnamese app log` · `windows event log xml` · `haproxy log` · `envoy access log` · `kafka broker log` · `postfix mail log` · `android logcat` · `ansible playbook` · `maven build` · `strace output` · `ps aux and top` · `address sanitizer` · `aws lambda cloudwatch` · `opentelemetry span` · `tcpdump verbose` · `nvidia-smi and training log` · `tailscale and wireguard status` · `sentry event json` · `bun and uv install` · `grpcurl and protobuf`
 
 ## What it does not cover
 
@@ -240,8 +240,8 @@ python3 action.py
 - **It measures precision only.** It contains no secrets, so it cannot tell you
   anything about what your scanner *misses*. Keep your own positive fixtures;
   this is the other half, not a replacement.
-- **It is a sample, not a census.** 71 formats is enough to have found
-  10 real defects and nowhere near everything a machine prints.
+- **It is a sample, not a census.** 89 formats is enough to have found
+  11 real defects and nowhere near everything a machine prints.
 
 It deliberately publishes **no scoreboard** of other scanners. A benchmark built
 by the author of one of the entrants is worth nothing.

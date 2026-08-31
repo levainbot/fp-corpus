@@ -8,12 +8,13 @@
   "source": "https://levain.bmac.io/fp-corpus.json",
   "built_by": "Levain, an AI agent. https://levain.bmac.io/",
   "counts": {
-    "formats": 71,
-    "lines": 449,
-    "personal_data": 21
+    "formats": 89,
+    "lines": 598,
+    "personal_data": 40
   },
   "kinds": {
     "ipv4": "A public IPv4 address. Not a secret; personal data in an access log.",
+    "sentry": "The public half of a Sentry DSN. Not a secret -- it ships in the browser bundle of every site that uses Sentry -- but it names the organisation and the project, so this tool redacts it the way it redacts an IP address.",
     "email": "An email address. Not a secret; a real person's address.",
     "homedir": "A username inside a home-directory path."
   },
@@ -613,6 +614,216 @@
       "secrets": [],
       "personal_data": [],
       "text": "<Event xmlns=\"http://schemas.microsoft.com/win/2004/08/events/event\">\n  <System>\n    <Provider Name=\"Microsoft-Windows-Security-Auditing\" Guid=\"{54849625-5478-4994-A5BA-3E3B0328C30D}\"/>\n    <EventID>4624</EventID>\n    <Version>2</Version>\n    <Level>0</Level>\n    <Task>12544</Task>\n    <Keywords>0x8020000000000000</Keywords>\n    <TimeCreated SystemTime=\"2026-08-30T04:12:07.1234567Z\"/>\n    <EventRecordID>884213</EventRecordID>\n    <Correlation ActivityID=\"{9f1c2b44-77aa-4c31-9d20-0e1b3a55c901}\"/>\n    <Execution ProcessID=\"884\" ThreadID=\"4120\"/>\n    <Channel>Security</Channel>\n    <Computer>WIN-DC01.corp.example.com</Computer>\n  </System>\n  <EventData>\n    <Data Name=\"SubjectUserSid\">S-1-5-18</Data>\n    <Data Name=\"SubjectUserName\">WIN-DC01$</Data>\n    <Data Name=\"SubjectLogonId\">0x3e7</Data>\n    <Data Name=\"TargetUserName\">jsmith</Data>\n    <Data Name=\"TargetDomainName\">CORP</Data>\n    <Data Name=\"LogonType\">3</Data>\n    <Data Name=\"LogonProcessName\">Kerberos</Data>\n    <Data Name=\"AuthenticationPackageName\">Kerberos</Data>\n    <Data Name=\"WorkstationName\">-</Data>\n    <Data Name=\"IpAddress\">10.4.2.19</Data>\n    <Data Name=\"IpPort\">50412</Data>\n  </EventData>\n</Event>"
+    },
+    {
+      "name": "haproxy log",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        },
+        {
+          "text": "198.51.100.7",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "Aug 31 09:14:02 lb-01 haproxy[2213]: 203.0.113.42:54118 [31/Aug/2026:09:14:02.117] https-in~ api-backend/web-03 0/0/1/28/29 200 4213 - - ---- 214/214/12/3/0 0/0 \"GET /api/v2/orders?page=3 HTTP/2.0\"\nAug 31 09:14:03 lb-01 haproxy[2213]: 198.51.100.7:39442 [31/Aug/2026:09:14:03.004] https-in~ api-backend/<NOSRV> 0/-1/-1/-1/3001 503 217 - - SC-- 214/214/0/0/3 0/0 \"POST /api/v2/checkout HTTP/1.1\"\nAug 31 09:14:04 lb-01 haproxy[2213]: Server api-backend/web-03 is DOWN, reason: Layer4 timeout, check duration: 2001ms. 2 active and 0 backup servers left.\nAug 31 09:14:31 lb-01 haproxy[2213]: Server api-backend/web-03 is UP, reason: Layer7 check passed, code: 200, check duration: 12ms. 3 active and 0 backup servers online."
+    },
+    {
+      "name": "envoy access log",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        },
+        {
+          "text": "198.51.100.7",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "[2026-08-31T09:14:02.881Z] \"GET /api/v2/orders?page=3 HTTP/2\" 200 - 0 4213 29 26 \"203.0.113.42\" \"grpc-go/1.62.0\" \"9f1c2b44-77aa-4c31-9d20-0e1b3a55c901\" \"api.example.com\" \"10.4.2.19:8080\"\n[2026-08-31T09:14:03.004Z] \"POST /api/v2/checkout HTTP/2\" 503 UF 512 91 3001 - \"198.51.100.7\" \"okhttp/4.12.0\" \"b7d1f0e2-3c48-4a19-8f55-2ad9c0e14b73\" \"api.example.com\" \"10.4.2.21:8080\"\n[2026-08-31 09:14:03.010][21][debug][router] [source/common/router/router.cc:1361] [C4812][S8821304412990117223] upstream reset: reset reason: connection failure, transport failure reason: delayed connect error: 111\n[2026-08-31 09:14:05.117][19][info][upstream] [source/common/upstream/cds_api_helper.cc:32] cds: add 4 cluster(s), remove 1 cluster(s)"
+    },
+    {
+      "name": "kafka broker log",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "[2026-08-31 09:14:02,881] INFO [GroupCoordinator 3]: Preparing to rebalance group orders-consumer in state PreparingRebalance with old generation 41 (__consumer_offsets-27) (kafka.coordinator.group.GroupCoordinator)\n[2026-08-31 09:14:03,102] INFO [GroupCoordinator 3]: Stabilized group orders-consumer generation 42 (__consumer_offsets-27) with 4 members (kafka.coordinator.group.GroupCoordinator)\n[2026-08-31 09:14:04,551] WARN [ReplicaFetcher replicaId=3, leaderId=1, fetcherId=0] Received UNKNOWN_TOPIC_ID from the leader for partition events-12 (kafka.server.ReplicaFetcherThread)\n[2026-08-31 09:14:09,338] INFO [UnifiedLog partition=events-12, dir=/var/lib/kafka/data] Rolled new log segment at offset 88213004 in 3 ms. (kafka.log.UnifiedLog)\n[2026-08-31 09:14:12,004] INFO [Controller id=1] Newly added brokers: , deleted brokers: 4, bounced brokers: , all live brokers: 1,2,3 (kafka.controller.KafkaController)"
+    },
+    {
+      "name": "postfix mail log",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        },
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        },
+        {
+          "text": "20260831091402.3F2B8C9E1D@mail.example.com",
+          "kind": "email"
+        },
+        {
+          "text": "noreply@example.com",
+          "kind": "email"
+        },
+        {
+          "text": "dana@example.com",
+          "kind": "email"
+        },
+        {
+          "text": "198.51.100.7",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "Aug 31 09:14:02 mail-01 postfix/smtpd[24815]: connect from mx.example.net[203.0.113.42]\nAug 31 09:14:02 mail-01 postfix/smtpd[24815]: 3F2B8C9E1D: client=mx.example.net[203.0.113.42]\nAug 31 09:14:02 mail-01 postfix/cleanup[24817]: 3F2B8C9E1D: message-id=<20260831091402.3F2B8C9E1D@mail.example.com>\nAug 31 09:14:03 mail-01 postfix/qmgr[1188]: 3F2B8C9E1D: from=<noreply@example.com>, size=4213, nrcpt=1 (queue active)\nAug 31 09:14:04 mail-01 postfix/smtp[24820]: 3F2B8C9E1D: to=<dana@example.com>, relay=mx1.example.org[198.51.100.7]:25, delay=1.9, delays=0.32/0/0.71/0.87, dsn=2.0.0, status=sent (250 2.0.0 OK)\nAug 31 09:14:04 mail-01 postfix/qmgr[1188]: 3F2B8C9E1D: removed"
+    },
+    {
+      "name": "android logcat",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "08-31 09:14:02.881  2481  2504 I ActivityManager: Start proc 8213:com.example.shop/u0a221 for activity {com.example.shop/.MainActivity}\n08-31 09:14:03.104  8213  8213 D OkHttp  : --> GET https://api.example.com/v2/orders?page=3 http/2.0\n08-31 09:14:03.442  8213  8240 W System.err: java.net.SocketTimeoutException: timeout after 3000ms\n08-31 09:14:03.999  2481  2495 E ANR     : ANR in com.example.shop (com.example.shop/.CartActivity), reason: Input dispatching timed out\n08-31 09:14:04.210  8213  8213 I Choreographer: Skipped 42 frames!  The application may be doing too much work on its main thread."
+    },
+    {
+      "name": "ansible playbook",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "198.51.100.7",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "TASK [Gathering Facts] *********************************************************\nok: [web-01.example.com]\nTASK [nginx : template config] *************************************************\nchanged: [web-01.example.com] => {\"changed\": true, \"checksum\": \"3f2b8c9e1d4a7b60c5e8f9012a3b4c5d6e7f8091\", \"dest\": \"/etc/nginx/nginx.conf\", \"gid\": 0, \"group\": \"root\", \"mode\": \"0644\", \"size\": 4213, \"uid\": 0}\nfatal: [web-02.example.com]: UNREACHABLE! => {\"changed\": false, \"msg\": \"Failed to connect to the host via ssh: ssh: connect to host 198.51.100.7 port 22: Connection timed out\", \"unreachable\": true}\nPLAY RECAP *********************************************************************\nweb-01.example.com         : ok=8    changed=1    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0"
+    },
+    {
+      "name": "maven build",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [],
+      "text": "[INFO] --- maven-compiler-plugin:3.13.0:compile (default-compile) @ orders-service ---\n[INFO] Compiling 214 source files with javac [debug release 21] to target/classes\n[WARNING] /src/main/java/com/example/orders/OrderService.java:[214,28] [deprecation] settle(long) in OrderApi has been deprecated\n[INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.17.1/jackson-databind-2.17.1.jar\n[INFO] Installing /src/target/orders-service-4.2.1.jar to /root/.m2/repository/com/example/orders-service/4.2.1/orders-service-4.2.1.jar\n[INFO] BUILD SUCCESS\n[INFO] Total time:  01:12 min"
+    },
+    {
+      "name": "strace output",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "openat(AT_FDCWD, \"/etc/ssl/certs/ca-certificates.crt\", O_RDONLY|O_CLOEXEC) = 3\nfstat(3, {st_mode=S_IFREG|0644, st_size=213432, ...}) = 0\nmmap(NULL, 213432, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f3c8b41a000\nconnect(7, {sa_family=AF_INET, sin_port=htons(443), sin_addr=inet_addr(\"203.0.113.42\")}, 16) = -1 EINPROGRESS (Operation now in progress)\nepoll_wait(9, [{events=EPOLLOUT, data={u32=7, u64=7}}], 128, 5000) = 1\nwrite(7, \"\\26\\3\\1\\2\\0\\1\\0\\1\\374\\3\\3\", 11) = 11\n+++ exited with 0 +++"
+    },
+    {
+      "name": "ps aux and top",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [],
+      "text": "top - 09:14:02 up 6 days,  2:11,  2 users,  load average: 1.42, 1.08, 0.94\n%Cpu(s):  8.3 us,  2.1 sy,  0.0 ni, 88.9 id,  0.4 wa,  0.0 hi,  0.3 si,  0.0 st\nMiB Mem :   7962.4 total,    412.8 free,   5218.1 used,   2331.5 buff/cache\nUSER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot           1  0.0  0.1 168924 12844 ?        Ss   Aug25   0:41 /sbin/init\napp         2481  3.2  6.4 4213880 528412 ?      Sl   09:02   0:38 /usr/bin/java -Xmx2g -jar /srv/orders.jar --spring.profiles.active=prod\napp         2504  0.0  0.2  12884  4212 pts/0    R+   09:14   0:00 ps aux"
+    },
+    {
+      "name": "address sanitizer",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [],
+      "text": "=================================================================\n==2481==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x60300000ef84 at pc 0x00010a3c2b41 bp 0x7ffee4a13b70 sp 0x7ffee4a13b68\nREAD of size 4 at 0x60300000ef84 thread T0\n    #0 0x10a3c2b40 in parse_header codec/frame.c:214\n    #1 0x10a3c11a2 in decode_packet codec/frame.c:88\n0x60300000ef84 is located 0 bytes to the right of 20-byte region [0x60300000ef70,0x60300000ef84) allocated by thread T0 here:\nSUMMARY: AddressSanitizer: heap-buffer-overflow codec/frame.c:214 in parse_header"
+    },
+    {
+      "name": "aws lambda cloudwatch",
+      "lines": 9,
+      "secrets": [],
+      "personal_data": [],
+      "text": "START RequestId: 5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e Version: $LATEST\n2026-08-31T09:14:02.881Z\t5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e\tINFO\tcold start complete, region eu-west-1, runtime nodejs22.x\n2026-08-31T09:14:02.913Z\t5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e\tINFO\t{\"level\":\"info\",\"msg\":\"settling order\",\"order_id\":88213,\"trace\":\"Root=1-5759e988-bd862e3fe1be46a994272793;Parent=53995c3f42cd8ad8;Sampled=1\"}\n2026-08-31T09:14:03.221Z\t5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e\tWARN\tdynamodb ConditionalCheckFailedException on orders, retry 1 of 3\nEND RequestId: 5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e\nREPORT RequestId: 5f2b9c1a-4e6d-4c3b-9a8e-2f1d4c9b7a6e\tDuration: 412.88 ms\tBilled Duration: 413 ms\tMemory Size: 512 MB\tMax Memory Used: 118 MB\tInit Duration: 284.12 ms\tXRAY TraceId: 1-5759e988-bd862e3fe1be46a994272793\tSegmentId: 53995c3f42cd8ad8\tSampled: true\nSTART RequestId: c8a1d70e-93b4-4f21-8bd6-0e5a2c19f334 Version: $LATEST\nEND RequestId: c8a1d70e-93b4-4f21-8bd6-0e5a2c19f334\nREPORT RequestId: c8a1d70e-93b4-4f21-8bd6-0e5a2c19f334\tDuration: 38.41 ms\tBilled Duration: 39 ms\tMemory Size: 512 MB\tMax Memory Used: 119 MB"
+    },
+    {
+      "name": "opentelemetry span",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "{\"resourceSpans\":[{\"resource\":{\"attributes\":[{\"key\":\"service.name\",\"value\":{\"stringValue\":\"orders-api\"}},{\"key\":\"service.version\",\"value\":{\"stringValue\":\"2.14.0\"}},{\"key\":\"deployment.environment.name\",\"value\":{\"stringValue\":\"production\"}},{\"key\":\"host.name\",\"value\":{\"stringValue\":\"api-7c4f9d8b6-x2klm\"}},{\"key\":\"telemetry.sdk.language\",\"value\":{\"stringValue\":\"go\"}}]},\n\"scopeSpans\":[{\"scope\":{\"name\":\"go.opentelemetry.io/otel/sdk/tracer\",\"version\":\"1.34.0\"},\"spans\":[\n{\"traceId\":\"4bf92f3577b34da6a3ce929d0e0e4736\",\"spanId\":\"00f067aa0ba902b7\",\"parentSpanId\":\"0000000000000000\",\"name\":\"POST /api/v2/checkout\",\"kind\":2,\"startTimeUnixNano\":\"1787840842881000000\",\"endTimeUnixNano\":\"1787840843293000000\",\"status\":{\"code\":1}},\n{\"traceId\":\"4bf92f3577b34da6a3ce929d0e0e4736\",\"spanId\":\"a1c3e5f709b2d4c6\",\"parentSpanId\":\"00f067aa0ba902b7\",\"name\":\"pg.query\",\"attributes\":[{\"key\":\"db.system.name\",\"value\":{\"stringValue\":\"postgresql\"}},{\"key\":\"db.query.text\",\"value\":{\"stringValue\":\"SELECT * FROM orders WHERE id = $1\"}}]}]}]}]}\n2026-08-31T09:14:03.301Z\tinfo\texporterhelper@v0.118.0/queue_sender.go:97\texported 2 spans to otel-collector:4317 in 11.4ms\n2026-08-31T09:14:03.302Z\tdebug\tpropagation\ttraceparent=00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01 tracestate=vendor=t61rcWkgMzE"
+    },
+    {
+      "name": "tcpdump verbose",
+      "lines": 12,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        },
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        },
+        {
+          "text": "198.51.100.7",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "tcpdump: listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes\n09:14:02.881342 IP 203.0.113.42.51234 > 10.0.1.15.443: Flags [S], seq 2891043771, win 65535, options [mss 1460,sackOK,TS val 3128841902 ecr 0,nop,wscale 10], length 0\n09:14:02.881501 IP 10.0.1.15.443 > 203.0.113.42.51234: Flags [S.], seq 1884210993, ack 2891043772, win 65160, options [mss 1460,sackOK,TS val 884213377 ecr 3128841902,nop,wscale 7], length 0\n09:14:02.913884 IP 10.0.1.15.8080 > 10.0.1.22.44118: Flags [P.], seq 1:242, ack 1, win 502, length 241: HTTP: HTTP/1.1 200 OK\n\t0x0000:  4500 0119 3d8f 4000 4006 5b21 0a00 010f  E...=.@.@.[!....\n\t0x0010:  0a00 0116 1f90 ac56 6b21 44a9 9e13 7c02  .......Vk!D...|.\n\t0x0020:  8018 01f6 8f14 0000 0101 080a 34b2 91c1  ............4...\n\t0x0030:  ba8c 1e77 4854 5450 2f31 2e31 2032 3030  ...wHTTP/1.1.200\n\t0x0040:  204f 4b0d 0a63 6f6e 7465 6e74 2d74 7970  .OK..content-typ\n\t0x0050:  653a 2061 7070 6c69 6361 7469 6f6e 2f6a  e:.application/j\n09:14:03.004112 IP 198.51.100.7.44118 > 10.0.1.15.8080: Flags [R.], seq 242, ack 242, win 0, length 0\n6 packets captured, 6 packets received by filter, 0 packets dropped by kernel"
+    },
+    {
+      "name": "nvidia-smi and training log",
+      "lines": 12,
+      "secrets": [],
+      "personal_data": [],
+      "text": "+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 570.86.15              Driver Version: 570.86.15      CUDA Version: 12.8      |\n|-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n|   0  NVIDIA H100 80GB HBM3          On  |   00000000:8A:00.0 Off |                    0 |\n| N/A   61C    P0            412W /  700W |   68412MiB /  81559MiB |     98%      Default |\n+-----------------------------------------+------------------------+----------------------+\nGPU 0: NVIDIA H100 80GB HBM3 (UUID: GPU-4d2c8f1e-7a93-4b06-9c5d-2e81f0a63b47)\n[2026-08-31 09:14:02,881] [INFO] [trainer.py:412] step 12400 | loss 1.8842 | lr 3.0e-05 | grad_norm 0.4127 | tok/s 41288 | mem 66.81GiB\n[2026-08-31 09:14:31,014] [INFO] [trainer.py:412] step 12500 | loss 1.8617 | lr 2.9e-05 | grad_norm 0.3988 | tok/s 41402 | mem 66.81GiB\n[2026-08-31 09:14:31,882] [INFO] [checkpoint.py:88] saved step-12500 to s3://ml-artifacts/orders-rerank/step-12500.safetensors\n[2026-08-31 09:14:31,884] [INFO] [checkpoint.py:91] sha256:7d0c9a1b4e2f8c3d5a6b0e7f1c2d9a8b3e4f5c6d7a8b9e0f1c2d3a4b5e6f7c8d"
+    },
+    {
+      "name": "tailscale and wireguard status",
+      "lines": 15,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "100.101.102.103",
+          "kind": "ipv4"
+        },
+        {
+          "text": "198.51.100.7",
+          "kind": "ipv4"
+        },
+        {
+          "text": "198.51.100.7",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "$ tailscale status\n100.101.102.103 build-01             dana@        linux   active; direct 198.51.100.7:41641, tx 41284 rx 88213\n$ tailscale debug prefs | grep -i key\n        \"NodeKey\": \"nodekey:9f8c2b1a4e6d7c3b5a8e2f1d4c9b7a6e3f2d1c8b0a9e7f6d5c4b3a2918e7d6c5\",\n        \"DiscoKey\": \"discokey:2b1c4e6d7a3b5c8e9f0d1a2c3b4e5f6a7d8c9b0e1f2a3c4d5e6f7a8b9c0d1e2\",\n$ sudo wg show wg0\ninterface: wg0\n  public key: HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw=\n  private key: (hidden)\npeer: xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=\n  endpoint: 198.51.100.7:51820\n$ tail -3 /etc/wireguard/wg0.conf\n[Peer]\nPublicKey = xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=\nAllowedIPs = 10.8.0.2/32"
+    },
+    {
+      "name": "sentry event json",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "a3f9c21d8b7e4a6c9f0d2b1e4c7a5d38",
+          "kind": "sentry"
+        }
+      ],
+      "text": "{\"event_id\":\"9f8c2b1a4e6d7c3b5a8e2f1d4c9b7a6e\",\"timestamp\":\"2026-08-31T09:14:02.881Z\",\"platform\":\"javascript\",\"level\":\"error\",\n\"release\":\"orders-web@2.14.0+9f8c2b1a4e6d7c3b5a8e2f1d4c9b7a6e3f2d1c8b\",\"environment\":\"production\",\"server_name\":\"api-7c4f9d8b6-x2klm\",\n\"contexts\":{\"trace\":{\"trace_id\":\"4bf92f3577b34da6a3ce929d0e0e4736\",\"span_id\":\"00f067aa0ba902b7\",\"op\":\"http.client\",\"status\":\"internal_error\"}},\n\"exception\":{\"values\":[{\"type\":\"TypeError\",\"value\":\"Cannot read properties of undefined (reading 'total')\",\"stacktrace\":{\"frames\":[{\"filename\":\"app:///static/checkout.9f8c2b1a4e.js\",\"lineno\":88,\"colno\":21,\"function\":\"settle\",\"in_app\":true}]}}]},\n\"sdk\":{\"name\":\"sentry.javascript.browser\",\"version\":\"9.4.0\"},\"tags\":{\"transaction\":\"/checkout\",\"handled\":\"no\"}}\n[Sentry] envelope 9f8c2b1a4e6d7c3b5a8e2f1d4c9b7a6e -> https://a3f9c21d8b7e4a6c9f0d2b1e4c7a5d38@o4507288.ingest.us.sentry.io/4507288\n[Sentry] 200 OK in 41ms, rate limit remaining 4998"
+    },
+    {
+      "name": "bun and uv install",
+      "lines": 14,
+      "secrets": [],
+      "personal_data": [],
+      "text": "$ bun install\nbun install v1.2.19 (aa8bd1f2)\n + @sentry/browser@9.4.0\n + zod@3.24.2\n + typescript@5.7.3 (dev)\n 42 packages installed [1.28s]\n$ uv pip install -r requirements.txt\nUsing CPython 3.13.1 interpreter at: /usr/bin/python3.13\nResolved 34 packages in 214ms\n   Downloaded httpx==0.28.1 (sha256:6d1cb0d1b3f9d6bbf6f4bcbe8e21ee5b3e6e0a1e8db4b6d5b1a1f5aa2a1eb95c)\n   Downloaded pydantic==2.10.6 (https://files.pythonhosted.org/packages/6a/c1/pydantic-2.10.6-py3-none-any.whl#sha256=427d664bf0b8a2b34ff5dd0f5a18df00591adcee7198fbd71981054cef37b58)\nPrepared 6 packages in 1.02s\nInstalled 6 packages in 88ms\nwarning: `uv pip install` is experimental; prefer `uv add` for project dependencies"
+    },
+    {
+      "name": "grpcurl and protobuf",
+      "lines": 15,
+      "secrets": [],
+      "personal_data": [],
+      "text": "$ grpcurl -v -d '{\"order_id\":\"88213\"}' api.example.com:443 orders.v2.Orders/Settle\nResolved method descriptor:\nrpc Settle ( .orders.v2.SettleRequest ) returns ( .orders.v2.SettleResponse );\nRequest metadata to send:\n(empty)\nResponse headers received:\ncontent-type: application/grpc\ngrpc-accept-encoding: identity, deflate, gzip\nx-envoy-upstream-service-time: 412\nResponse contents:\n{ \"orderId\": \"88213\", \"settledAt\": \"2026-08-31T09:14:02.881Z\", \"receipt\": \"CggIkOjTvAYQABIQOWY4YzJiMWE0ZTZkN2MzYhoDVVNE\" }\nResponse trailers received:\ngrpc-status-details-bin: CAgSHW9yZGVyIDg4MjEzIGFscmVhZHkgc2V0dGxlZBoA\n$ protoc --include_imports --descriptor_set_out=orders.pb orders/v2/orders.proto\norders/v2/orders.proto: descriptor set written, 4 file(s), 11284 bytes"
     }
   ]
 }
