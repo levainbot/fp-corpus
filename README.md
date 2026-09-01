@@ -1,14 +1,14 @@
 # fp-corpus
 
-**A complete test set for a secret scanner: 89 formats that must stay silent,
-and 37 that must not.**
+**A complete test set for a secret scanner: 109 formats that must stay silent,
+and 41 that must not.**
 
-- `fp-corpus` — 89 formats, 598 lines of completely ordinary log and build
+- `fp-corpus` — 109 formats, 762 lines of completely ordinary log and build
   output containing no credential of any kind. Every secret your scanner reports
   against it is a false positive. That is true independently of any tool: there is
   nothing in here to find. **This is precision.**
-- `tp-corpus` — 37 formats of the places credentials actually escape from, with
-  71 synthetic credentials planted in them and an answer key saying exactly which
+- `tp-corpus` — 41 formats of the places credentials actually escape from, with
+  79 synthetic credentials planted in them and an answer key saying exactly which
   string in which section. Everything your scanner does not report is a miss.
   **This is recall.**
 
@@ -44,15 +44,15 @@ its fix, at [https://levain.bmac.io/false-positives.html](https://levain.bmac.io
 | --- | --- |
 | [`fp-corpus.txt`](fp-corpus.txt) | plain text, sections delimited by `===== name =====`. Vendor it into any project, in any language. |
 | [`fp-corpus.json`](fp-corpus.json) | the same bytes with the verdict attached, so it can be scored in CI instead of read by eye. |
-| [`tp-corpus.txt.b64`](tp-corpus.txt.b64) | the true-positive half: 37 formats that DO leak, 71 planted credentials, same delimiter. Base64 — run `materialize.py` first, see below. |
+| [`tp-corpus.txt.b64`](tp-corpus.txt.b64) | the true-positive half: 41 formats that DO leak, 79 planted credentials, same delimiter. Base64 — run `materialize.py` first, see below. |
 | [`tp-corpus.json.b64`](tp-corpus.json.b64) | the same bytes with the answer key: which exact string in which section is the secret. Base64 too. |
 | [`materialize.py`](materialize.py) | decodes both of the above and checks each against a recorded sha256. Stdlib only. |
 | [`fpscore.py`](fpscore.py) | the runner: points any scanner at either corpus and tells you which sections it tripped on, or which secrets it missed. Python 3.8+, stdlib only, MIT. |
 
 The JSON gives each section two fields:
 
-- **`secrets`** — always empty, on all 89 sections. That is the universal claim.
-- **`personal_data`** — the 40 non-secret spans a redactor may legitimately mask
+- **`secrets`** — always empty, on all 109 sections. That is the universal claim.
+- **`personal_data`** — the 46 non-secret spans a redactor may legitimately mask
   (public IPs, email addresses, a username in a home-directory path). Subtract them
   if your tool does PII as well as secrets; otherwise ignore the field.
 
@@ -128,7 +128,7 @@ ordinary output does to a first-draft detector before you point your real one at
 
 ### Or point your own scanner at it, without writing any of that
 
-`fpscore.py` writes the 89 sections out as files, runs whatever command you give
+`fpscore.py` writes the 109 sections out as files, runs whatever command you give
 it, reads the findings back out of the output, and tells you which section each
 one came from:
 
@@ -142,10 +142,11 @@ so you can see the shape of the answer before you trust it with your own:
 
 ```
 $ python3 fpscore.py --demo
-corpus: 89 sections, 598 lines, 0 credentials.
-read:   87 finding(s) via built-in straw-man scanner
+corpus: 109 sections, 762 lines, 0 credentials.
+read:   90 finding(s) via built-in straw-man scanner
+control: reported -- the scanner demonstrably read these files
 
-FALSE POSITIVES: 86, across 29 of 89 sections
+FALSE POSITIVES: 89, across 32 of 109 sections
 personal-data matches (not counted): 1
 
 worst sections:
@@ -169,6 +170,23 @@ you can look at what tripped.
 a zero. That distinction is the point of the tool: a scan that never happened and
 a scan that found nothing look identical from the outside, and only one of them is
 good news.
+
+The loud version of that is easy — the binary is missing, the command exits 127.
+The quiet version is the one that fools a gate: a wrong path, an extension filter
+or a missing recursive flag, and your scanner exits **0** having read nothing. So
+fpscore plants one extra file, `000-control.log`, in the same directory as the
+corpus. It holds three synthetic credentials in the three shapes every secret
+scanner detects, it is **never scored** — findings there are neither false
+positives nor recall — and it answers one question: did your scanner read these
+bytes at all?
+
+- reported → your zero is a real zero, and the run says so.
+- not reported, and nothing else reported either → **un-scorable**, exit 2. A
+  perfect precision score is not available to a scan that never looked.
+- not reported, but findings elsewhere → scored normally, with the control miss
+  printed beside the number so you can weigh it.
+
+Pass `--no-control` to turn the file off and score the run regardless.
 
 It publishes no scoreboard and it never phones anywhere. The only number it prints
 is yours.
@@ -217,6 +235,10 @@ Two things worth knowing before you trust a green run:
   is wrong, or the binary is missing, the build goes red and says so. This is the
   one result the action will never report as a pass, because a flawless zero from a
   command that exited 127 is the exact shape of a gate that has stopped working.
+  The control file described above extends that to the quiet case, where the
+  command exits 0 and reports nothing: the summary carries a `control file` row
+  and a `control-reported` output, and a run that reports neither the control nor
+  anything else goes red as un-scorable rather than green at zero.
 
 Everything the action decides lives in [`action.py`](action.py), stdlib only. You
 can run it outside CI, with no runner involved:
@@ -229,7 +251,7 @@ python3 action.py
 
 ## What is in it
 
-`nginx access` · `apache error` · `syslog` · `systemd journal` · `java stacktrace` · `python traceback` · `node stacktrace` · `npm install` · `pip install` · `git output` · `git clean` · `docker` · `kubernetes` · `json log` · `sql log` · `http headers` · `prometheus` · `webpack build` · `test runner` · `csv data` · `dmesg` · `terraform plan` · `config file (placeholders)` · `prose` · `github actions` · `go test` · `cargo build` · `rails log` · `laravel log` · `dotnet stack` · `powershell` · `curl verbose` · `aws cli` · `mongo / redis` · `yarn / pnpm` · `nginx error` · `elasticsearch` · `terminal / homebrew` · `jest / vitest` · `minified js` · `minified css` · `source map` · `css data uri` · `html head` · `package-lock json` · `docker digests` · `pem certificate` · `ssh public keys` · `known_hosts and fingerprints` · `terraform lock` · `api json response` · `hexdump` · `go and gradle checksums` · `ci env dump (masked)` · `aws signed request headers` · `kubernetes manifest` · `build hashes and cache keys` · `nginx access non-latin query` · `japanese application log` · `cyrillic syslog` · `mojibake` · `punycode and idn` · `base64 message body` · `emoji ci output` · `rtl log lines` · `windows path non-latin` · `encoding negotiation` · `thai app log` · `devanagari app log` · `vietnamese app log` · `windows event log xml` · `haproxy log` · `envoy access log` · `kafka broker log` · `postfix mail log` · `android logcat` · `ansible playbook` · `maven build` · `strace output` · `ps aux and top` · `address sanitizer` · `aws lambda cloudwatch` · `opentelemetry span` · `tcpdump verbose` · `nvidia-smi and training log` · `tailscale and wireguard status` · `sentry event json` · `bun and uv install` · `grpcurl and protobuf`
+`nginx access` · `apache error` · `syslog` · `systemd journal` · `java stacktrace` · `python traceback` · `node stacktrace` · `npm install` · `pip install` · `git output` · `git clean` · `docker` · `kubernetes` · `json log` · `sql log` · `http headers` · `prometheus` · `webpack build` · `test runner` · `csv data` · `dmesg` · `terraform plan` · `config file (placeholders)` · `prose` · `github actions` · `go test` · `cargo build` · `rails log` · `laravel log` · `dotnet stack` · `powershell` · `curl verbose` · `aws cli` · `mongo / redis` · `yarn / pnpm` · `nginx error` · `elasticsearch` · `terminal / homebrew` · `jest / vitest` · `minified js` · `minified css` · `source map` · `css data uri` · `html head` · `package-lock json` · `docker digests` · `pem certificate` · `ssh public keys` · `known_hosts and fingerprints` · `terraform lock` · `api json response` · `hexdump` · `go and gradle checksums` · `ci env dump (masked)` · `aws signed request headers` · `kubernetes manifest` · `build hashes and cache keys` · `nginx access non-latin query` · `japanese application log` · `cyrillic syslog` · `mojibake` · `punycode and idn` · `base64 message body` · `emoji ci output` · `rtl log lines` · `windows path non-latin` · `encoding negotiation` · `thai app log` · `devanagari app log` · `vietnamese app log` · `windows event log xml` · `haproxy log` · `envoy access log` · `kafka broker log` · `postfix mail log` · `android logcat` · `ansible playbook` · `maven build` · `strace output` · `ps aux and top` · `address sanitizer` · `aws lambda cloudwatch` · `opentelemetry span` · `tcpdump verbose` · `nvidia-smi and training log` · `tailscale and wireguard status` · `sentry event json` · `bun and uv install` · `grpcurl and protobuf` · `gitleaks report` · `github actions masked log` · `docker compose masked env` · `vault kv get` · `kubectl describe secret` · `ansible no_log` · `aws sts masked identity` · `last-four partial mask` · `placeholder config template` · `ansi coloured build output` · `progress bar with carriage returns` · `box drawing summary table` · `tmux capture-pane` · `less -R paged log` · `windows terminal with cursor codes` · `line wrapped at eighty columns` · `pytest colour diff` · `256 colour palette dump` · `coloured spinner and progress line` · `coloured git diff`
 
 ## What it does not cover
 
@@ -240,7 +262,7 @@ python3 action.py
 - **It measures precision only.** It contains no secrets, so it cannot tell you
   anything about what your scanner *misses*. Keep your own positive fixtures;
   this is the other half, not a replacement.
-- **It is a sample, not a census.** 89 formats is enough to have found
+- **It is a sample, not a census.** 109 formats is enough to have found
   11 real defects and nowhere near everything a machine prints.
 
 It deliberately publishes **no scoreboard** of other scanners. A benchmark built

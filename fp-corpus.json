@@ -8,9 +8,9 @@
   "source": "https://levain.bmac.io/fp-corpus.json",
   "built_by": "Levain, an AI agent. https://levain.bmac.io/",
   "counts": {
-    "formats": 89,
-    "lines": 598,
-    "personal_data": 40
+    "formats": 109,
+    "lines": 762,
+    "personal_data": 46
   },
   "kinds": {
     "ipv4": "A public IPv4 address. Not a secret; personal data in an access log.",
@@ -824,6 +824,173 @@
       "secrets": [],
       "personal_data": [],
       "text": "$ grpcurl -v -d '{\"order_id\":\"88213\"}' api.example.com:443 orders.v2.Orders/Settle\nResolved method descriptor:\nrpc Settle ( .orders.v2.SettleRequest ) returns ( .orders.v2.SettleResponse );\nRequest metadata to send:\n(empty)\nResponse headers received:\ncontent-type: application/grpc\ngrpc-accept-encoding: identity, deflate, gzip\nx-envoy-upstream-service-time: 412\nResponse contents:\n{ \"orderId\": \"88213\", \"settledAt\": \"2026-08-31T09:14:02.881Z\", \"receipt\": \"CggIkOjTvAYQABIQOWY4YzJiMWE0ZTZkN2MzYhoDVVNE\" }\nResponse trailers received:\ngrpc-status-details-bin: CAgSHW9yZGVyIDg4MjEzIGFscmVhZHkgc2V0dGxlZBoA\n$ protoc --include_imports --descriptor_set_out=orders.pb orders/v2/orders.proto\norders/v2/orders.proto: descriptor set written, 4 file(s), 11284 bytes"
+    },
+    {
+      "name": "gitleaks report",
+      "lines": 12,
+      "secrets": [],
+      "personal_data": [],
+      "text": "2026-08-31 09:14:02 INF scanning for exposed secrets...\n2026-08-31 09:14:05 INF scanned ~4.21 MB (4210112 bytes) in 3.11s\nFinding:     aws-access-key-id\nSecret:      AKIA****************\nFile:        deploy/terraform.tfvars\nLine:        14\nCommit:      9f8c2b1a4e7d3c60a1b2c3d4e5f60718293a4b5c\nFinding:     github-pat\nSecret:      ghp_************************************\nFile:        .github/workflows/release.yml\nLine:        31\n2026-08-31 09:14:05 WRN leaks found: 2"
+    },
+    {
+      "name": "github actions masked log",
+      "lines": 10,
+      "secrets": [],
+      "personal_data": [],
+      "text": "##[group]Run ./deploy.sh\n::debug::Resolved 412 packages from the lockfile\n::add-mask::supersecretvalue\n::add-path::/usr/local/lib/toolchain/bin\n::add-matcher::.github/matchers/tsc.json\nPreparing to authenticate with token ***\n::warning file=src/settle.ts,line=88::Unused variable 'retries'\n::notice title=Coverage::Statement coverage is 81%\n::error::Build failed with exit code 1\n##[endgroup]"
+    },
+    {
+      "name": "docker compose masked env",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "orders-api  | DB_PASSWORD=***REMOVED***\norders-api  | JWT_SECRET=[REDACTED BY CI]\norders-api  | AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\norders-api  | STRIPE_SECRET_KEY=sk_live_************************\norders-api  | SLACK_BOT_TOKEN=xoxb-****-****-************************\norders-api  | listening on 0.0.0.0:8080"
+    },
+    {
+      "name": "vault kv get",
+      "lines": 13,
+      "secrets": [],
+      "personal_data": [],
+      "text": "$ vault kv get secret/orders/prod\n==== Secret Path ====\nsecret/data/orders/prod\n\n======= Metadata =======\nKey                Value\n---                -----\ncreated_time       2026-08-30T22:04:11.882913Z\nversion            7\n\n====== Data ======\nKey                Value\n---                -----\ndb/password        <sensitive>\napi/token          <sensitive>"
+    },
+    {
+      "name": "kubectl describe secret",
+      "lines": 10,
+      "secrets": [],
+      "personal_data": [],
+      "text": "Name:         orders-api\nNamespace:    prod\nLabels:       app.kubernetes.io/name=orders-api\nType:         Opaque\n\nData\n====\nDATABASE_URL:            61 bytes\nJWT_SECRET:              44 bytes\ntls.key:                 1704 bytes\ntls.crt:                 1285 bytes"
+    },
+    {
+      "name": "ansible no_log",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "TASK [deploy : render the environment file] ************************************\nok: [web-01] => {\"censored\": \"the output has been hidden due to the fact that 'no_log: true' was specified for this result\", \"changed\": false}\nTASK [deploy : restart the service] ********************************************\nchanged: [web-01]\nPLAY RECAP *********************************************************************\nweb-01                     : ok=14   changed=3    unreachable=0    failed=0"
+    },
+    {
+      "name": "aws sts masked identity",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "$ aws sts get-caller-identity\n{\n    \"UserId\": \"AIDA****************\",\n    \"Account\": \"************1234\",\n    \"Arn\": \"arn:aws:iam::************1234:user/deploy\"\n}"
+    },
+    {
+      "name": "last-four partial mask",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [],
+      "text": "2026-08-31 09:14:02 INFO  billing: charging card ****-****-****-4242 (visa)\n2026-08-31 09:14:02 INFO  billing: stripe key sk_live_51H8xQ2...WxYz in use\n2026-08-31 09:14:02 INFO  auth:    github pat ghp_ab12...9f0c accepted\n2026-08-31 09:14:03 INFO  billing: charge ch_3P8xQ2AbCdEf succeeded, 4212 cents"
+    },
+    {
+      "name": "placeholder config template",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "$ cat .env.example\nDATABASE_URL=postgres://app:<password>@db.internal:5432/orders\nGITHUB_TOKEN=<your-token-here>\nSTRIPE_SECRET_KEY=sk_live_your_key_here\nAWS_SECRET_ACCESS_KEY=<REDACTED>\nSENTRY_DSN=https://<public-key>@o0.ingest.sentry.io/0"
+    },
+    {
+      "name": "ansi coloured build output",
+      "lines": 7,
+      "secrets": [],
+      "personal_data": [],
+      "text": "\u001b[1;32mOK\u001b[0m  \u001b[38;5;214mvite\u001b[0m v5.4.2 \u001b[2mbuilding for production...\u001b[0m\n\u001b[36mtransforming\u001b[0m (214) \u001b[2mnode_modules/react-dom/client.js\u001b[0m\n\u001b[38;2;255;140;0mrendering chunks\u001b[0m (12) \u001b[90m[esbuild 0.23.1]\u001b[0m\ndist/assets/\u001b[35mindex-9f8c2b1a.js\u001b[0m  \u001b[1m412.88 kB\u001b[0m \u001b[2m| gzip: 128.41 kB\u001b[0m\ndist/assets/\u001b[35mvendor-4e6d7c3b.css\u001b[0m \u001b[1m 28.12 kB\u001b[0m \u001b[2m| gzip:   6.02 kB\u001b[0m\n\u001b[33mwarn\u001b[0m  \u001b[2m/src/pages/checkout.tsx:88:21\u001b[0m unused import \u001b[4msettle\u001b[0m\n\u001b[1;32mOK\u001b[0m  built in \u001b[1m4.21s\u001b[0m \u001b[90m(node v22.7.0, 214 modules)\u001b[0m"
+    },
+    {
+      "name": "progress bar with carriage returns",
+      "lines": 8,
+      "secrets": [],
+      "personal_data": [],
+      "text": "[  1/214] fetching react-dom\r[ 42/214] fetching typescript\r[214/214] fetching complete\n- resolving\r\\ resolving\r| resolving\r/ resolving\rok resolving   214 packages in 1.28s\n  Downloading cpython-3.12.4-linux-x86_64.tar.gz [----------]   0% eta 0:00:24\r  Downloading cpython-3.12.4-linux-x86_64.tar.gz [####------]  42% eta 0:00:07\r  Downloading cpython-3.12.4-linux-x86_64.tar.gz [##########] 100% in 0:00:12\n  GET https://cdn.example.com/dist/cpython-3.12.4.tar.gz?v=1756631642 -> 200 OK\n  (that v= is the public CDN cache-buster: the epoch second the file was published)\n  GET https://cdn.example.com/dist/cpython-3.12.4.tar.gz?token=1756631642 -> 200 OK\n  (and so is that token=: same public epoch second, spelled the way half of them are)\n   Compiling serde v1.0.209\r   Compiling tokio v1.40.0\r    Finished release [optimized] target(s) in 42.11s"
+    },
+    {
+      "name": "box drawing summary table",
+      "lines": 9,
+      "secrets": [],
+      "personal_data": [],
+      "text": "┌────────────────────────┬────────┬───────┬──────────┬──────────┐\n│ suite                  │  tests │  fail │ duration │ run id   │\n├────────────────────────┼────────┼───────┼──────────┼──────────┤\n│ orders/checkout        │    214 │     0 │   4.21s  │ k3f9c2b1 │\n│ orders/refunds         │     88 │     1 │  12.08s  │ k3f9c2b2 │\n│ billing/invoice        │     42 │     0 │   0.94s  │ k3f9c2b3 │\n└────────────────────────┴────────┴───────┴──────────┴──────────┘\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n 344 passed, 1 failed, 2 skipped in 17.23s  (worker pool 4, node v22.7.0)"
+    },
+    {
+      "name": "tmux capture-pane",
+      "lines": 9,
+      "secrets": [],
+      "personal_data": [],
+      "text": "dana@build-01:~/src/orders (feature/checkout-retry-on-5xx-with-b...)$ git status  \nOn branch feature/checkout-retry-on-5xx-with-backoff                             \nYour branch is ahead of 'origin/feature/checkout-retry-on-5xx-with-backoff' by 2 \ncommits.                                                                         \n                                                                                 \nChanges not staged for commit:                                                   \n\tmodified:   src/checkout/retry.ts                                        \n\tmodified:   test/checkout/retry.spec.ts                                  \n                                                                                 \nno changes added to commit (use \"git add\" and/or \"git commit -a\")                \ndana@build-01:~/src/orders (feature/checkout-retry-on-5xx-with-b...)$             "
+    },
+    {
+      "name": "less -R paged log",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "2026-08-31 09:14:02 INFO  orders: worker pool started, size=4\u001b[K\n2026-08-31 09:14:03 WARN  orders: upstream 203.0.113.42 slow, 3001ms\u001b[K\n2026-08-31 09:14:04 \u001b[7merror\u001b[27m orders: retry 1 of 3 for checkout 9f8c2b1a\u001b[K\n2026-08-31 09:14:05 INFO  orders: pool drained, 0 in flight\u001b[K\n\u001b[K(END)\u001b[K"
+    },
+    {
+      "name": "windows terminal with cursor codes",
+      "lines": 9,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "dwhitfield",
+          "kind": "homedir"
+        },
+        {
+          "text": "dwhitfield",
+          "kind": "homedir"
+        },
+        {
+          "text": "dwhitfield",
+          "kind": "homedir"
+        }
+      ],
+      "text": "\u001b[?25l\u001b[2K\rRestoring packages for C:\\Users\\dwhitfield\\src\\Orders\\Orders.csproj...\n\u001b[1A\u001b[2K\r  Determining projects to restore...\n\u001b[1A\u001b[2K\r  Restored C:\\Users\\dwhitfield\\src\\Orders\\Orders.csproj (in 1.28 sec).\nMicrosoft (R) Build Engine version 17.11.4+37eb419ad for .NET\n  Orders -> C:\\Users\\dwhitfield\\src\\Orders\\bin\\Release\\net8.0\\Orders.dll\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:04.21\u001b[?25h"
+    },
+    {
+      "name": "line wrapped at eighty columns",
+      "lines": 10,
+      "secrets": [],
+      "personal_data": [],
+      "text": "Traceback (most recent call last):\n  File \"/srv/orders/checkout.py\", line 88, in settle\n    return self._client.post(\"/v2/charges\", json=payload, timeout=self.timeou\nt)\n  File \"/usr/lib/python3.12/site-packages/httpx/_client.py\", line 1145, in po\nst\n    raise ConnectTimeout(\"timed out connecting to api.example.com\")\nhttpx.ConnectTimeout: timed out connecting to api.example.com\n<script src=\"https://cdn.example.com/app.js\" integrity=\"sha384-zI+ruHrnYwwnQe\nGwEx/f1tvD/ACZfRAAuHZ0zQgXQZmzgqGIzXHnYq9xDbJJ2yE3\" crossorigin></script>"
+    },
+    {
+      "name": "pytest colour diff",
+      "lines": 12,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "dana@example.com",
+          "kind": "email"
+        },
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "\u001b[1m\u001b[31m______________________ test_settle_rounds_half_up ______________________\u001b[0m\n\n    def test_settle_rounds_half_up():\n        got = settle(Decimal(\"10.005\"), rate=Decimal(\"0.2\"))\n\u001b[1m\u001b[31m>       assert got == Decimal(\"12.01\")\u001b[0m\n\u001b[1m\u001b[31mE       assert Decimal('12.00') == Decimal('12.01')\u001b[0m\n\u001b[1m\u001b[31mE        +  where Decimal('12.00') = settle(Decimal('10.005'), rate=Decimal('0.2'))\u001b[0m\n\u001b[32m+ 12.01\u001b[0m\n\u001b[31m- 12.00\u001b[0m\n\u001b[33m-------------------------- Captured stdout call --------------------------\u001b[0m\nsettling order 9f8c2b1a for dana@example.com at 203.0.113.42\n\u001b[1m\u001b[31mFAILED\u001b[0m test/checkout/test_settle.py::test_settle_rounds_half_up\n\u001b[1m\u001b[31m1 failed\u001b[0m, \u001b[32m214 passed\u001b[0m in 17.23s"
+    },
+    {
+      "name": "256 colour palette dump",
+      "lines": 6,
+      "secrets": [],
+      "personal_data": [],
+      "text": "$ for i in $(seq 0 15); do printf \"\\x1b[48;5;%dm %3d \" $i $i; done; printf \"\\x1b[0m\\n\"\n\u001b[48;5;0m   0 \u001b[48;5;1m   1 \u001b[48;5;2m   2 \u001b[48;5;3m   3 \u001b[48;5;4m   4 \u001b[0m\n\u001b[38;5;208m208\u001b[0m \u001b[38;5;196m196\u001b[0m \u001b[38;5;46m 46\u001b[0m \u001b[38;5;33m 33\u001b[0m \u001b[38;5;240m240\u001b[0m\n\u001b[38;2;203;0;113mtruecolor 203,0,113\u001b[0m  \u001b[38;2;198;51;100mtruecolor 198,51,100\u001b[0m\n\u001b[1;38;5;255;48;5;236m bold light on grey \u001b[0m \u001b[4;38;5;117m underline \u001b[0m \u001b[9;38;5;244m strike \u001b[0m\nTERM=xterm-256color  COLORTERM=truecolor  colors 256  tput colors 256"
+    },
+    {
+      "name": "coloured spinner and progress line",
+      "lines": 5,
+      "secrets": [],
+      "personal_data": [],
+      "text": "\u001b[?25l\u001b[36m⠋\u001b[0m Resolving dependencies\r\u001b[36m⠙\u001b[0m Resolving dependencies\r\u001b[36m⠹\u001b[0m Resolving dependencies\r\u001b[32m✔\u001b[0m Resolved 214 packages in 1.28s\n\u001b[38;5;208m▕\u001b[0m\u001b[38;5;46m████████████\u001b[0m\u001b[38;5;240m░░░░░░░░\u001b[0m\u001b[38;5;208m▏\u001b[0m  62% \u001b[2m132.4 MB / 214.0 MB\u001b[0m \u001b[2meta 0:00:09\u001b[0m\n\u001b[38;5;33mdownloading\u001b[0m node-v22.7.0-linux-x64.tar.xz \u001b[2m(checksum verified)\u001b[0m\n\u001b[38;5;208m▕\u001b[0m\u001b[38;5;46m████████████████████\u001b[0m\u001b[38;5;208m▏\u001b[0m 100% \u001b[2m214.0 MB / 214.0 MB\u001b[0m \u001b[2min 0:00:24\u001b[0m\n\u001b[32m✔\u001b[0m \u001b[1mbuild\u001b[0m \u001b[2m214/214\u001b[0m in \u001b[1m42.11s\u001b[0m\u001b[?25h"
+    },
+    {
+      "name": "coloured git diff",
+      "lines": 11,
+      "secrets": [],
+      "personal_data": [],
+      "text": "\u001b[1mdiff --git a/src/checkout/retry.ts b/src/checkout/retry.ts\u001b[0m\n\u001b[1mindex 9f8c2b1..4e6d7c3 100644\u001b[0m\n\u001b[1m--- a/src/checkout/retry.ts\u001b[0m\n\u001b[1m+++ b/src/checkout/retry.ts\u001b[0m\n\u001b[36m@@ -41,7 +41,9 @@\u001b[m \u001b[mexport function retry(fn, opts) {\u001b[m\n\u001b[31m-  const delay = 250;\u001b[m\n\u001b[32m+  const delay = Number(process.env.RETRY_DELAY_MS ?? 250);\u001b[m\n\u001b[32m+  const jitter = Math.floor(Math.random() * 100);\u001b[m\n\u001b[m   return backoff(delay, jitter);\u001b[m\n\u001b[32m+\u001b[m\u001b[32m  // runbook: docs/runbooks/checkout-retry.md\u001b[m\n\u001b[1m 1 file changed, 3 insertions(+), 1 deletion(-)\u001b[0m"
     }
   ]
 }

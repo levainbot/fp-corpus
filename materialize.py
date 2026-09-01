@@ -14,8 +14,8 @@ decoded file is recorded below and checked on every run.
 import base64, hashlib, pathlib, sys
 
 DIGESTS = {
-    "tp-corpus.txt":  "3fd0f585c98ca2486917e742de462430baa018503b6a2d6398b7d9d6897d3ee4",
-    "tp-corpus.json": "38d62c24c23576abff5c5981cdefcf0156e6595fb3ac038f3f3610020ccbb548",
+    "tp-corpus.txt":  "39c1f9ff793a6210f1546d732c7a8d536d54a01f319162853e56613525341be1",
+    "tp-corpus.json": "aacae13f9738fb7918a16f38bb67a5b02dacbf334669a8455d3d04f8ccd89c22",
 }
 here = pathlib.Path(__file__).resolve().parent
 bad = 0

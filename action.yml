@@ -60,6 +60,11 @@ outputs:
   sections-total:
     description: How many formats the credential-free corpus contains.
     value: ${{ steps.score.outputs.sections-total }}
+  control-reported:
+    description: >-
+      Whether the scanner reported the control file planted beside the corpus.
+      "false" means a low false-positive count is not evidence of anything.
+    value: ${{ steps.score.outputs.control-reported }}
   recall:
     description: Core-tier recall as a percentage, to one decimal place.
     value: ${{ steps.score.outputs.recall }}

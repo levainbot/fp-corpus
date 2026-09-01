@@ -16,10 +16,13 @@ JSON, writes a job summary, and exits non-zero when either gate is breached.
 
 The one behaviour worth stating out loud, because getting it wrong is how a
 scanner gate becomes a decoration: **a scan that did not run is a FAILURE, not a
-score of zero.** fpscore exits 2 and prints nothing parseable when the command
-it was handed never produced a finding it could read. This script turns that
-into a red build and says so, rather than reporting a flawless 0 false
-positives from a command that exited 127.
+score of zero.** That covers the loud case (the command exited 127) and the
+quiet one (it exited 0 and reported nothing at all). fpscore plants a control
+file holding three unmistakable synthetic credentials next to the corpus and
+never scores it; a run that reports neither those nor anything else exits 2 as
+un-scorable. This script turns either into a red build and says which it was,
+rather than reporting a flawless 0 false positives from a scan that never
+looked.
 """
 import json
 import os
@@ -49,9 +52,10 @@ def run_fpscore(corpus, cmd, extra=()):
     proc = subprocess.run(argv, capture_output=True, text=True)
     if proc.returncode == 2 or not proc.stdout.strip().startswith("{"):
         detail = (proc.stdout + proc.stderr).strip()
-        fail("the scanner command did not run, so nothing was scored.\n"
-             "A score of zero from a command that never executed is the one\n"
-             "result this action will never report as a pass.\n\n" + detail)
+        fail("the scan was not scorable, so no score is being reported.\n"
+             "A zero from a scan that never looked is the one result this\n"
+             "action will never report as a pass. fpscore.py explains which\n"
+             "way it failed below.\n\n" + detail)
     try:
         return json.loads(proc.stdout)
     except json.JSONDecodeError:
@@ -122,6 +126,15 @@ def main():
         outputs["sections-tripped"] = str(tripped)
         outputs["sections-total"] = str(total)
         verdict = "pass" if fps <= max_fp else "FAIL"
+        ctl = res.get("control") or {}
+        # A precision score is a claim that your scanner stayed quiet. That claim
+        # is only worth reading if the scanner was capable of speaking, so the
+        # control row sits in the same table as the number it qualifies.
+        if ctl.get("reported"):
+            ctl_row = "reported | **yes** | the scanner read these files |"
+        else:
+            ctl_row = ("reported | **no** | it flagged none of the %d planted "
+                       "credentials |" % len(ctl.get("planted", []) or [1, 2, 3]))
         lines += [
             "### Precision — %d formats that contain no credential" % total,
             "",
@@ -129,8 +142,21 @@ def main():
             "| --- | --- | --- |",
             "| false positives | **%d** | at most %d — %s |" % (fps, max_fp, verdict),
             "| formats tripped on | %d of %d | |" % (tripped, total),
+            "| control file | %s" % ctl_row,
             "",
         ]
+        outputs["control-reported"] = "true" if ctl.get("reported") else "false"
+        if ctl and not ctl.get("reported"):
+            lines += [
+                "> **Read the count above with care.** `%s` is planted next to "
+                "the corpus and never scored. It holds an AWS access key, a "
+                "GitHub token and a private key in plain sight, and this "
+                "scanner reported none of them. Whatever its false-positive "
+                "count says, it is not evidence about how this scanner "
+                "behaves on clean logs."
+                % ctl.get("file", "the control file"),
+                "",
+            ]
         worst = sorted(res.get("by_section", {}).items(),
                        key=lambda kv: -kv[1])[:10]
         if worst:

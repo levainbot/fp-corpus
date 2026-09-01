@@ -37,6 +37,86 @@ MATCH_KEYS = ("Secret", "secret", "Match", "match", "Raw", "raw", "raw_v2",
               "value", "matched", "Line")
 FILE_HINT = re.compile(r"[\w.-]*?(\d{3}-[a-z0-9-]+\.log)")
 
+# ---------------------------------------------------------------------------
+# The control file.
+#
+# A precision corpus contains no credentials, so the best possible result is
+# zero findings -- which is also exactly what a scanner produces when it never
+# read the files at all. A wrong path, an extension filter, a missing
+# --recursive: all of them exit 0 and print nothing, and without a witness this
+# script would report a flawless score for a scan that did not happen.
+#
+# So it plants one extra file that is NOT part of the corpus and never scored,
+# holding three synthetic credentials in the three shapes every secret scanner
+# detects. Reporting them proves nothing about a tool's quality; it proves the
+# tool read these bytes. Silence on all three, with silence everywhere else, is
+# reported as an un-scorable run rather than as a perfect one.
+CONTROL_FILE = "000-control.log"
+
+# Assembled from fragments so this source file never itself contains a string
+# matching a credential pattern -- it lives in a public git repository that has
+# push protection on, and it is scanned by the very tools it is built for.
+# Nothing here is a real credential; the values are made up.
+CONTROL_SECRETS = (
+    ("aws-access-key-id", "AKIA" + "3XQ7ZR2LMWD5TKVB"),
+    ("github-token", "ghp_" + "9tR2mV6xQ0aL4bN8cW1eK5jH7dS3fG0uY2iP"),
+    ("private-key", "-----BEGIN " + "RSA PRIVATE KEY-----"),
+)
+
+CONTROL_BODY = """MIIBOgIBAAJBAKq3Yz2mVn8sLd41TfQe0hWbX9uJcR7pAoGvE5sNzD6yKlMtBw2r
+Uv8QxHnJ4aCeF1gP0dSiT3wYkZmL9bOqAgMBAAECQQCJ7mXvA2dNqL0pRfWzYuHb
+9kGcT1sEoVxDmJ4rBnQaZ6PwK3iUlS8yXeCtM0vFgN7hRdObA5jTqLwYnZuIxEfB"""
+
+
+def control_text():
+    aws, ghp, pem = (t for _, t in CONTROL_SECRETS)
+    return "\n".join([
+        "# %s -- planted by fpscore.py. NOT part of the corpus." % CONTROL_FILE,
+        "#",
+        "# Every credential below is synthetic. It is here for one reason: to",
+        "# prove your scanner actually read these files. Findings in this file",
+        "# are never counted as false positives and never counted as recall.",
+        "2026-01-04T09:12:45Z deploy[1] aws_access_key_id=" + aws,
+        "2026-01-04T09:12:45Z deploy[1] github_token=" + ghp,
+        "2026-01-04T09:12:46Z deploy[1] reading signing key /etc/keys/deploy.pem",
+        pem,
+        CONTROL_BODY,
+        "-----END " + "RSA PRIVATE KEY-----",
+        "",
+    ])
+
+
+def write_control(outdir):
+    """Plant the control file. Returns a one-entry index shaped like a section
+    so the finding extractors can attribute to it, marked so scoring skips it."""
+    text = control_text()
+    with open(os.path.join(outdir, CONTROL_FILE), "w", encoding="utf-8") as fh:
+        fh.write(text)
+    return {CONTROL_FILE: {"name": "control (never scored)", "text": text,
+                           "secrets": [], "personal_data": [],
+                           "_file": CONTROL_FILE, "_control": True}}
+
+
+def human_list(items):
+    """a, b and c"""
+    if len(items) < 2:
+        return "".join(items)
+    return "%s and %s" % (", ".join(items[:-1]), items[-1])
+
+
+def control_report(found, raw):
+    """Two independent witnesses that the scanner saw the control file: a
+    finding attributed to it, and any control secret echoed in the raw output.
+    Either one is enough -- a scanner that names the file but prints no matched
+    span is still demonstrably looking."""
+    attributed = [f for f in found if f["file"] == CONTROL_FILE]
+    echoed = [kind for kind, text in CONTROL_SECRETS if text in raw]
+    return {"file": CONTROL_FILE,
+            "reported": bool(attributed) or bool(echoed),
+            "findings": len(attributed),
+            "kinds_echoed": echoed,
+            "planted": [kind for kind, _ in CONTROL_SECRETS]}
+
 
 def slug(name):
     s = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
@@ -270,6 +350,9 @@ def main():
     ap.add_argument("--json", action="store_true", help="print the result as JSON")
     ap.add_argument("--keep", action="store_true",
                     help="keep the corpus directory and print its path")
+    ap.add_argument("--no-control", action="store_true", dest="no_control",
+                    help="do not plant the control file. A run with no findings "
+                         "then scores as zero instead of as un-scorable.")
     args = ap.parse_args()
 
     if not args.cmd and not args.demo:
@@ -281,20 +364,28 @@ def main():
 
     workdir = tempfile.mkdtemp(prefix="fp-corpus-")
     index = materialize(corpus, workdir)
+    control = {} if args.no_control else write_control(workdir)
+    # What the scanner is pointed at and what gets scored are different sets:
+    # the control file is in the first and never in the second.
+    scan_index = dict(index)
+    scan_index.update(control)
 
-    code, err, failed = 0, "", False
+    code, err, failed, raw = 0, "", False, ""
     if args.demo:
-        found = demo_findings(index)
+        found = demo_findings(scan_index)
         source = "built-in straw-man scanner"
     else:
-        raw, code, err = run(args.cmd, workdir, index, args.json)
+        raw, code, err = run(args.cmd, workdir, scan_index, args.json)
         doc = parse_json_ish(raw)
-        found = findings_from_json(doc, index) if doc else []
+        found = findings_from_json(doc, scan_index) if doc else []
         source = "json output"
         if not found:
-            found = findings_from_text(raw, index)
+            found = findings_from_text(raw, scan_index)
             source = "filenames in plain output"
         failed = code != 0
+
+    ctl = control_report(found, raw) if control else None
+    found = [f for f in found if f["file"] != CONTROL_FILE]
 
     has_secrets = any(sec.get("secrets") for sec in corpus["sections"])
     tps, fps, personal = classify(found, index)
@@ -313,6 +404,25 @@ def main():
             "  0 false positives here would mean your scanner never looked.\n"
             "  check the command, then re-run with --keep to inspect the corpus files.\n"
             % (code, ("  stderr: %s\n" % err.splitlines()[0][:200]) if err else ""))
+        sys.exit(2)
+
+    # The quieter failure, and the one this whole file exists to catch: the
+    # command exited 0 and reported nothing anywhere. That is indistinguishable
+    # from a perfect precision score unless something in the directory was
+    # guaranteed to be reported. Something was.
+    if ctl and not ctl["reported"] and not found and not args.demo:
+        sys.stderr.write(
+            "\nSCAN NOT CREDIBLE -- not scored.\n"
+            "  the command exited 0 and reported nothing at all: no finding on the\n"
+            "  corpus, and nothing on %s, a file planted next to it holding\n"
+            "  %s in plain sight.\n"
+            "  a scanner that misses those did not read these files, so 0 false\n"
+            "  positives here is not a precision score -- it is a scan that did not\n"
+            "  happen. Check the command for a wrong path, an extension filter or a\n"
+            "  missing recursive flag, then re-run with --keep to see the files.\n"
+            "  Pass --no-control to score the run anyway.\n"
+            % (CONTROL_FILE, human_list([k.replace("-", " ")
+                                         for k, _ in CONTROL_SECRETS])))
         sys.exit(2)
 
     by_section = {}
@@ -334,6 +444,7 @@ def main():
             "sections_tripped": len(by_section),
             "by_section": dict(ranked),
             "parsed_from": source,
+            "control": ctl,
             "findings": fps,
         }, indent=2))
     else:
@@ -342,6 +453,13 @@ def main():
             ("%d planted credentials" % len(hits + misses)) if has_secrets
             else "0 credentials"))
         print("read:   %d finding(s) via %s" % (len(found), source))
+        if ctl:
+            print("control: %s" % (
+                "reported -- the scanner demonstrably read these files"
+                if ctl["reported"] else
+                "NOT reported -- your scanner flagged none of the "
+                "%d unmistakable credentials in %s" % (len(CONTROL_SECRETS),
+                                                       CONTROL_FILE)))
         print("")
         if has_secrets:
             pct = (100 * len(core_h) // max(1, len(core_h) + len(core_m)))
@@ -381,7 +499,7 @@ def main():
         print("")
         print("corpus files kept at: %s" % workdir)
     else:
-        for b in index:
+        for b in scan_index:
             os.unlink(os.path.join(workdir, b))
         rep = os.path.join(workdir, "_report.json")
         if os.path.exists(rep):
