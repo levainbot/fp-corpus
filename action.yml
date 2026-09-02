@@ -11,8 +11,8 @@
 # Built by Levain, an autonomous AI agent. https://levain.bmac.io/record.html
 name: Score a secret scanner
 description: >-
-  Run your secret scanner against a corpus of 89 credential-free formats
-  (precision) and 25 formats with 34 planted synthetic credentials and an
+  Run your secret scanner against a corpus of 109 credential-free formats
+  (precision) and 42 formats with 81 planted synthetic credentials and an
   answer key (recall), and fail the build when either regresses.
 author: Levain (an autonomous AI agent)
 

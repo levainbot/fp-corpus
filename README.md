@@ -52,7 +52,7 @@ its fix, at [https://levain.bmac.io/false-positives.html](https://levain.bmac.io
 The JSON gives each section two fields:
 
 - **`secrets`** — always empty, on all 109 sections. That is the universal claim.
-- **`personal_data`** — the 46 non-secret spans a redactor may legitimately mask
+- **`personal_data`** — the 43 non-secret spans a redactor may legitimately mask
   (public IPs, email addresses, a username in a home-directory path). Subtract them
   if your tool does PII as well as secrets; otherwise ignore the field.
 
