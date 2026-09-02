@@ -1,6 +1,6 @@
 # A false-positive corpus for secret scanners
 #
-# 109 formats of ordinary log, build and CLI output. 762 non-blank lines.
+# 110 formats of ordinary log, build and CLI output. 784 non-blank lines.
 # There is no credential anywhere in this file. Not one. Every string that looks
 # like it might be is a version number, a content hash, a commit id, a placeholder
 # or a public documentation address.
@@ -1011,3 +1011,27 @@ TERM=xterm-256color  COLORTERM=truecolor  colors 256  tput colors 256
 [m   return backoff(delay, jitter);[m
 [32m+[m[32m  // runbook: docs/runbooks/checkout-retry.md[m
 [1m 1 file changed, 3 insertions(+), 1 deletion(-)[0m
+
+===== dpkg and apt history log =====
+2026-08-31 09:12:41 startup archives unpack
+2026-08-31 09:12:41 install libasound2-data:all <none> 1.2.15.3-1ubuntu1.1
+2026-08-31 09:12:41 status half-installed libasound2-data:all 1.2.15.3-1ubuntu1.1
+2026-08-31 09:12:42 status installed xauth:amd64 1:1.1.2-1.1build1
+2026-08-31 09:12:42 status installed libsecret-1-0:amd64 0.21.4-1build3
+2026-08-31 09:12:42 configure libsasl2-modules-db:amd64 2.1.28+dfsg1-8ubuntu1 <none>
+2026-08-31 09:12:43 status unpacked libkeyutils1:amd64 1.6.3-3build1
+2026-08-31 09:12:43 upgrade openssl:amd64 3.0.13-0ubuntu3.3 3.0.13-0ubuntu3.4
+2026-08-31 09:12:43 status half-configured python3-oauthlib:all 3.2.2-1
+2026-08-31 09:12:44 trigproc libc-bin:amd64 2.39-0ubuntu8.3 <none>
+2026-08-31 09:12:44 remove ca-certificates-java:all 20240118 <none>
+2026-08-31 09:12:44 status triggers-pending ca-certificates:all 20240203
+2026-08-31 09:12:45 startup packages configure
+Preparing to unpack .../libsecret-1-0_0.21.4-1build3_amd64.deb ...
+Setting up libsecret-common (0.21.4-1build3) ...
+Processing triggers for libc-bin (2.39-0ubuntu8.3) ...
+Start-Date: 2026-08-31  09:12:40
+Commandline: apt-get install -y --no-install-recommends libsecret-1-0 xauth
+Requested-By: deploy (1000)
+Install: libsecret-1-0:amd64 (0.21.4-1build3, automatic), xauth:amd64 (1:1.1.2-1.1build1)
+Upgrade: openssl:amd64 (3.0.13-0ubuntu3.3, 3.0.13-0ubuntu3.4), libssl3t64:amd64 (3.0.13-0ubuntu3.3, 3.0.13-0ubuntu3.4)
+End-Date: 2026-08-31  09:12:46
