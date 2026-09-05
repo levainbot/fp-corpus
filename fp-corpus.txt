@@ -1,6 +1,6 @@
 # A false-positive corpus for secret scanners
 #
-# 110 formats of ordinary log, build and CLI output. 784 non-blank lines.
+# 114 formats of ordinary log, build and CLI output. 852 non-blank lines.
 # There is no credential anywhere in this file. Not one. Every string that looks
 # like it might be is a version number, a content hash, a commit id, a placeholder
 # or a public documentation address.
@@ -14,7 +14,7 @@
 # IP addresses use the RFC 5737 documentation ranges; hostnames use example.com.
 # Some of those ARE meant to be flagged by a redactor (an IP is not a secret but
 # it is often personal data) -- see the notes at levain.bmac.io/false-positives.html
-# for the 46 spans the tool that found them still flags, and why each is deliberate.
+# for the 47 spans the tool that found them still flags, and why each is deliberate.
 #
 # MIT licensed. Copy it, extend it, vendor it into your own test suite.
 # Source: https://levain.bmac.io/fp-corpus.txt
@@ -1035,3 +1035,79 @@ Requested-By: deploy (1000)
 Install: libsecret-1-0:amd64 (0.21.4-1build3, automatic), xauth:amd64 (1:1.1.2-1.1build1)
 Upgrade: openssl:amd64 (3.0.13-0ubuntu3.3, 3.0.13-0ubuntu3.4), libssl3t64:amd64 (3.0.13-0ubuntu3.3, 3.0.13-0ubuntu3.4)
 End-Date: 2026-08-31  09:12:46
+
+===== json schema with patterns =====
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SecretRotationConfig",
+  "type": "object",
+  "properties": {
+    "secretArn": {
+      "type": "string",
+      "pattern": "^arn:[a-z-]*:secretsmanager:[a-z0-9-]*:\d{12}:secret:[0-9A-Za-z_/+=.@!-]*$"
+    },
+    "requestUri": {
+      "type": "string",
+      "pattern": "urn:ietf:params:oauth:request_uri:[a-zA-Z0-9-._~]+"
+    },
+    "tokenPattern": { "type": "string", "pattern": "[A-Za-z0-9]{32}" },
+    "rotationLambdaArn": { "type": "string", "pattern": "arn:aws:secretsmanager:.*:[0-9]+:.*" }
+  },
+  "required": ["secretArn"]
+}
+
+===== openapi security scheme =====
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Digest authentication improves on basic authentication.
+        The authorization parameters for Basic authorization.
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: The user token configuration.
+paths:
+  /v2/analyzers:
+    get:
+      summary: an application that supports the JWT Bearer Token Authorization Grant
+      parameters:
+        - name: nextToken
+          in: query
+          schema: { type: string }
+
+===== detection api response =====
+{
+  "Blocks": [
+    { "BlockType": "WORD", "Confidence": 99.43561, "Geometry": {
+      "BoundingBox": { "Width": 0.0431, "Height": 0.0125, "Left": 0.5155559778213501, "Top": 0.394125759601593 } } },
+    { "BlockType": "LINE", "Confidence": 98.7, "Geometry": {
+      "BoundingBox": { "Width": 0.2210, "Height": 0.0141, "Left": 0.1234567890123456, "Top": 0.2 } } }
+  ],
+  "DocumentMetadata": { "Pages": 1 }
+}
+
+===== terraform state =====
+{
+  "version": 4,
+  "terraform_version": "1.9.5",
+  "serial": 218,
+  "lineage": "b1f0c2d4-3e5a-4c7b-9d81-2a6f4e0b7c33",
+  "resources": [
+    {
+      "mode": "managed", "type": "aws_instance", "name": "web",
+      "instances": [
+        { "schema_version": 1, "attributes": {
+            "ami": "ami-0c02fb55956c7d316",
+            "private_ip": "10.0.1.15",
+            "public_ip": "203.0.113.42",
+            "instance_type": "t3.micro",
+            "tags": { "Name": "web-01", "Owner": "platform" } } }
+      ]
+    }
+  ]
+}

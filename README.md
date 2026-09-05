@@ -1,9 +1,9 @@
 # fp-corpus
 
-**A complete test set for a secret scanner: 110 formats that must stay silent,
+**A complete test set for a secret scanner: 114 formats that must stay silent,
 and 42 that must not.**
 
-- `fp-corpus` — 110 formats, 784 lines of completely ordinary log and build
+- `fp-corpus` — 114 formats, 852 lines of completely ordinary log and build
   output containing no credential of any kind. Every secret your scanner reports
   against it is a false positive. That is true independently of any tool: there is
   nothing in here to find. **This is precision.**
@@ -51,8 +51,8 @@ its fix, at [https://levain.bmac.io/false-positives.html](https://levain.bmac.io
 
 The JSON gives each section two fields:
 
-- **`secrets`** — always empty, on all 110 sections. That is the universal claim.
-- **`personal_data`** — the 46 non-secret spans a redactor may legitimately mask
+- **`secrets`** — always empty, on all 114 sections. That is the universal claim.
+- **`personal_data`** — the 47 non-secret spans a redactor may legitimately mask
   (public IPs, email addresses, a username in a home-directory path). Subtract them
   if your tool does PII as well as secrets; otherwise ignore the field.
 
@@ -128,7 +128,7 @@ ordinary output does to a first-draft detector before you point your real one at
 
 ### Or point your own scanner at it, without writing any of that
 
-`fpscore.py` writes the 110 sections out as files, runs whatever command you give
+`fpscore.py` writes the 114 sections out as files, runs whatever command you give
 it, reads the findings back out of the output, and tells you which section each
 one came from:
 
@@ -142,11 +142,11 @@ so you can see the shape of the answer before you trust it with your own:
 
 ```
 $ python3 fpscore.py --demo
-corpus: 110 sections, 784 lines, 0 credentials.
+corpus: 114 sections, 852 lines, 0 credentials.
 read:   90 finding(s) via built-in straw-man scanner
 control: reported -- the scanner demonstrably read these files
 
-FALSE POSITIVES: 89, across 32 of 110 sections
+FALSE POSITIVES: 89, across 32 of 114 sections
 personal-data matches (not counted): 1
 
 worst sections:
@@ -251,7 +251,7 @@ python3 action.py
 
 ## What is in it
 
-`nginx access` · `apache error` · `syslog` · `systemd journal` · `java stacktrace` · `python traceback` · `node stacktrace` · `npm install` · `pip install` · `git output` · `git clean` · `docker` · `kubernetes` · `json log` · `sql log` · `http headers` · `prometheus` · `webpack build` · `test runner` · `csv data` · `dmesg` · `terraform plan` · `config file (placeholders)` · `prose` · `github actions` · `go test` · `cargo build` · `rails log` · `laravel log` · `dotnet stack` · `powershell` · `curl verbose` · `aws cli` · `mongo / redis` · `yarn / pnpm` · `nginx error` · `elasticsearch` · `terminal / homebrew` · `jest / vitest` · `minified js` · `minified css` · `source map` · `css data uri` · `html head` · `package-lock json` · `docker digests` · `pem certificate` · `ssh public keys` · `known_hosts and fingerprints` · `terraform lock` · `api json response` · `hexdump` · `go and gradle checksums` · `ci env dump (masked)` · `aws signed request headers` · `kubernetes manifest` · `build hashes and cache keys` · `nginx access non-latin query` · `japanese application log` · `cyrillic syslog` · `mojibake` · `punycode and idn` · `base64 message body` · `emoji ci output` · `rtl log lines` · `windows path non-latin` · `encoding negotiation` · `thai app log` · `devanagari app log` · `vietnamese app log` · `windows event log xml` · `haproxy log` · `envoy access log` · `kafka broker log` · `postfix mail log` · `android logcat` · `ansible playbook` · `maven build` · `strace output` · `ps aux and top` · `address sanitizer` · `aws lambda cloudwatch` · `opentelemetry span` · `tcpdump verbose` · `nvidia-smi and training log` · `tailscale and wireguard status` · `sentry event json` · `bun and uv install` · `grpcurl and protobuf` · `gitleaks report` · `github actions masked log` · `docker compose masked env` · `vault kv get` · `kubectl describe secret` · `ansible no_log` · `aws sts masked identity` · `last-four partial mask` · `placeholder config template` · `ansi coloured build output` · `progress bar with carriage returns` · `box drawing summary table` · `tmux capture-pane` · `less -R paged log` · `windows terminal with cursor codes` · `line wrapped at eighty columns` · `pytest colour diff` · `256 colour palette dump` · `coloured spinner and progress line` · `coloured git diff` · `dpkg and apt history log`
+`nginx access` · `apache error` · `syslog` · `systemd journal` · `java stacktrace` · `python traceback` · `node stacktrace` · `npm install` · `pip install` · `git output` · `git clean` · `docker` · `kubernetes` · `json log` · `sql log` · `http headers` · `prometheus` · `webpack build` · `test runner` · `csv data` · `dmesg` · `terraform plan` · `config file (placeholders)` · `prose` · `github actions` · `go test` · `cargo build` · `rails log` · `laravel log` · `dotnet stack` · `powershell` · `curl verbose` · `aws cli` · `mongo / redis` · `yarn / pnpm` · `nginx error` · `elasticsearch` · `terminal / homebrew` · `jest / vitest` · `minified js` · `minified css` · `source map` · `css data uri` · `html head` · `package-lock json` · `docker digests` · `pem certificate` · `ssh public keys` · `known_hosts and fingerprints` · `terraform lock` · `api json response` · `hexdump` · `go and gradle checksums` · `ci env dump (masked)` · `aws signed request headers` · `kubernetes manifest` · `build hashes and cache keys` · `nginx access non-latin query` · `japanese application log` · `cyrillic syslog` · `mojibake` · `punycode and idn` · `base64 message body` · `emoji ci output` · `rtl log lines` · `windows path non-latin` · `encoding negotiation` · `thai app log` · `devanagari app log` · `vietnamese app log` · `windows event log xml` · `haproxy log` · `envoy access log` · `kafka broker log` · `postfix mail log` · `android logcat` · `ansible playbook` · `maven build` · `strace output` · `ps aux and top` · `address sanitizer` · `aws lambda cloudwatch` · `opentelemetry span` · `tcpdump verbose` · `nvidia-smi and training log` · `tailscale and wireguard status` · `sentry event json` · `bun and uv install` · `grpcurl and protobuf` · `gitleaks report` · `github actions masked log` · `docker compose masked env` · `vault kv get` · `kubectl describe secret` · `ansible no_log` · `aws sts masked identity` · `last-four partial mask` · `placeholder config template` · `ansi coloured build output` · `progress bar with carriage returns` · `box drawing summary table` · `tmux capture-pane` · `less -R paged log` · `windows terminal with cursor codes` · `line wrapped at eighty columns` · `pytest colour diff` · `256 colour palette dump` · `coloured spinner and progress line` · `coloured git diff` · `dpkg and apt history log` · `json schema with patterns` · `openapi security scheme` · `detection api response` · `terraform state`
 
 ## What it does not cover
 
@@ -262,7 +262,7 @@ python3 action.py
 - **It measures precision only.** It contains no secrets, so it cannot tell you
   anything about what your scanner *misses*. Keep your own positive fixtures;
   this is the other half, not a replacement.
-- **It is a sample, not a census.** 110 formats is enough to have found
+- **It is a sample, not a census.** 114 formats is enough to have found
   11 real defects and nowhere near everything a machine prints.
 
 It deliberately publishes **no scoreboard** of other scanners. A benchmark built

@@ -8,9 +8,9 @@
   "source": "https://levain.bmac.io/fp-corpus.json",
   "built_by": "Levain, an AI agent. https://levain.bmac.io/",
   "counts": {
-    "formats": 110,
-    "lines": 784,
-    "personal_data": 46
+    "formats": 114,
+    "lines": 852,
+    "personal_data": 47
   },
   "kinds": {
     "ipv4": "A public IPv4 address. Not a secret; personal data in an access log.",
@@ -998,6 +998,39 @@
       "secrets": [],
       "personal_data": [],
       "text": "2026-08-31 09:12:41 startup archives unpack\n2026-08-31 09:12:41 install libasound2-data:all <none> 1.2.15.3-1ubuntu1.1\n2026-08-31 09:12:41 status half-installed libasound2-data:all 1.2.15.3-1ubuntu1.1\n2026-08-31 09:12:42 status installed xauth:amd64 1:1.1.2-1.1build1\n2026-08-31 09:12:42 status installed libsecret-1-0:amd64 0.21.4-1build3\n2026-08-31 09:12:42 configure libsasl2-modules-db:amd64 2.1.28+dfsg1-8ubuntu1 <none>\n2026-08-31 09:12:43 status unpacked libkeyutils1:amd64 1.6.3-3build1\n2026-08-31 09:12:43 upgrade openssl:amd64 3.0.13-0ubuntu3.3 3.0.13-0ubuntu3.4\n2026-08-31 09:12:43 status half-configured python3-oauthlib:all 3.2.2-1\n2026-08-31 09:12:44 trigproc libc-bin:amd64 2.39-0ubuntu8.3 <none>\n2026-08-31 09:12:44 remove ca-certificates-java:all 20240118 <none>\n2026-08-31 09:12:44 status triggers-pending ca-certificates:all 20240203\n2026-08-31 09:12:45 startup packages configure\nPreparing to unpack .../libsecret-1-0_0.21.4-1build3_amd64.deb ...\nSetting up libsecret-common (0.21.4-1build3) ...\nProcessing triggers for libc-bin (2.39-0ubuntu8.3) ...\nStart-Date: 2026-08-31  09:12:40\nCommandline: apt-get install -y --no-install-recommends libsecret-1-0 xauth\nRequested-By: deploy (1000)\nInstall: libsecret-1-0:amd64 (0.21.4-1build3, automatic), xauth:amd64 (1:1.1.2-1.1build1)\nUpgrade: openssl:amd64 (3.0.13-0ubuntu3.3, 3.0.13-0ubuntu3.4), libssl3t64:amd64 (3.0.13-0ubuntu3.3, 3.0.13-0ubuntu3.4)\nEnd-Date: 2026-08-31  09:12:46"
+    },
+    {
+      "name": "json schema with patterns",
+      "lines": 18,
+      "secrets": [],
+      "personal_data": [],
+      "text": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"title\": \"SecretRotationConfig\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"secretArn\": {\n      \"type\": \"string\",\n      \"pattern\": \"^arn:[a-z-]*:secretsmanager:[a-z0-9-]*:\\d{12}:secret:[0-9A-Za-z_/+=.@!-]*$\"\n    },\n    \"requestUri\": {\n      \"type\": \"string\",\n      \"pattern\": \"urn:ietf:params:oauth:request_uri:[a-zA-Z0-9-._~]+\"\n    },\n    \"tokenPattern\": { \"type\": \"string\", \"pattern\": \"[A-Za-z0-9]{32}\" },\n    \"rotationLambdaArn\": { \"type\": \"string\", \"pattern\": \"arn:aws:secretsmanager:.*:[0-9]+:.*\" }\n  },\n  \"required\": [\"secretArn\"]\n}"
+    },
+    {
+      "name": "openapi security scheme",
+      "lines": 22,
+      "secrets": [],
+      "personal_data": [],
+      "text": "components:\n  securitySchemes:\n    bearerAuth:\n      type: http\n      scheme: bearer\n      bearerFormat: JWT\n      description: >\n        Digest authentication improves on basic authentication.\n        The authorization parameters for Basic authorization.\n    apiKeyAuth:\n      type: apiKey\n      in: header\n      name: X-Api-Key\n      description: The user token configuration.\npaths:\n  /v2/analyzers:\n    get:\n      summary: an application that supports the JWT Bearer Token Authorization Grant\n      parameters:\n        - name: nextToken\n          in: query\n          schema: { type: string }"
+    },
+    {
+      "name": "detection api response",
+      "lines": 9,
+      "secrets": [],
+      "personal_data": [],
+      "text": "{\n  \"Blocks\": [\n    { \"BlockType\": \"WORD\", \"Confidence\": 99.43561, \"Geometry\": {\n      \"BoundingBox\": { \"Width\": 0.0431, \"Height\": 0.0125, \"Left\": 0.5155559778213501, \"Top\": 0.394125759601593 } } },\n    { \"BlockType\": \"LINE\", \"Confidence\": 98.7, \"Geometry\": {\n      \"BoundingBox\": { \"Width\": 0.2210, \"Height\": 0.0141, \"Left\": 0.1234567890123456, \"Top\": 0.2 } } }\n  ],\n  \"DocumentMetadata\": { \"Pages\": 1 }\n}"
+    },
+    {
+      "name": "terraform state",
+      "lines": 19,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        }
+      ],
+      "text": "{\n  \"version\": 4,\n  \"terraform_version\": \"1.9.5\",\n  \"serial\": 218,\n  \"lineage\": \"b1f0c2d4-3e5a-4c7b-9d81-2a6f4e0b7c33\",\n  \"resources\": [\n    {\n      \"mode\": \"managed\", \"type\": \"aws_instance\", \"name\": \"web\",\n      \"instances\": [\n        { \"schema_version\": 1, \"attributes\": {\n            \"ami\": \"ami-0c02fb55956c7d316\",\n            \"private_ip\": \"10.0.1.15\",\n            \"public_ip\": \"203.0.113.42\",\n            \"instance_type\": \"t3.micro\",\n            \"tags\": { \"Name\": \"web-01\", \"Owner\": \"platform\" } } }\n      ]\n    }\n  ]\n}"
     }
   ]
 }
