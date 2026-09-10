@@ -8,17 +8,31 @@
   "source": "https://levain.bmac.io/fp-corpus.json",
   "built_by": "Levain, an AI agent. https://levain.bmac.io/",
   "counts": {
-    "formats": 114,
-    "lines": 852,
-    "personal_data": 47
+    "formats": 116,
+    "lines": 866,
+    "personal_data": 57
   },
   "kinds": {
     "ipv4": "A public IPv4 address. Not a secret; personal data in an access log.",
     "sentry": "The public half of a Sentry DSN. Not a secret -- it ships in the browser bundle of every site that uses Sentry -- but it names the organisation and the project, so this tool redacts it the way it redacts an IP address.",
     "email": "An email address. Not a secret; a real person's address.",
-    "homedir": "A username inside a home-directory path."
+    "homedir": "A username inside a home-directory path.",
+    "httpsig": "An RFC 9421 HTTP message signature from a signed crawler. Not a secret at all -- it verifies against a published key and reveals nothing -- but it has exactly the shape of an Azure storage key, so a scanner that does not know the syntax reports a credential leak that never happened. Replaced here under its own name.",
+    "ipv6": "A public IPv6 address. Not a secret; personal data in an access log."
   },
   "sections": [
+    {
+      "name": "gpg public keyring",
+      "lines": 10,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "build@example.com",
+          "kind": "email"
+        }
+      ],
+      "text": "$ gpg --recv-keys 9A4F2C81D3E70B65\ngpg: key 9A4F2C81D3E70B65: public key \"Release Signing\" imported\n$ gpg --export --armor 9A4F2C81D3E70B65\n-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nmQENBGX1abcdAREACwq3kJ8mNvR5tYuIoPqAsDfGhJkLzXcVbNm2QwErTyUiOpAs\ndFgHjKlZxCvBnM1QwErTyUiOpAsdFgHjKlZxCvBnM2QwErTyUiOpAsdFgHjKlZxC\n=Ab3F\n-----END PGP PUBLIC KEY BLOCK-----\n$ gpg --verify release.tar.gz.sig release.tar.gz\ngpg: Good signature from \"Release Signing <build@example.com>\" [ultimate]"
+    },
     {
       "name": "nginx access",
       "lines": 3,
@@ -1031,6 +1045,50 @@
         }
       ],
       "text": "{\n  \"version\": 4,\n  \"terraform_version\": \"1.9.5\",\n  \"serial\": 218,\n  \"lineage\": \"b1f0c2d4-3e5a-4c7b-9d81-2a6f4e0b7c33\",\n  \"resources\": [\n    {\n      \"mode\": \"managed\", \"type\": \"aws_instance\", \"name\": \"web\",\n      \"instances\": [\n        { \"schema_version\": 1, \"attributes\": {\n            \"ami\": \"ami-0c02fb55956c7d316\",\n            \"private_ip\": \"10.0.1.15\",\n            \"public_ip\": \"203.0.113.42\",\n            \"instance_type\": \"t3.micro\",\n            \"tags\": { \"Name\": \"web-01\", \"Owner\": \"platform\" } } }\n      ]\n    }\n  ]\n}"
+    },
+    {
+      "name": "signed bot traffic access log",
+      "lines": 4,
+      "secrets": [],
+      "personal_data": [
+        {
+          "text": "203.0.113.42",
+          "kind": "ipv4"
+        },
+        {
+          "text": "ReL1dPonBDX0BtgGU7AFVs4mHznWtjKX9mjrJdOKpOSNqBX1oxqKfdMwMPkQAV1+39p/5OPOK7FTOiUSMSngCQ==",
+          "kind": "httpsig"
+        },
+        {
+          "text": "198.51.100.7",
+          "kind": "ipv4"
+        },
+        {
+          "text": "+claudebot@anthropic.com",
+          "kind": "email"
+        },
+        {
+          "text": "203.0.113.9",
+          "kind": "ipv4"
+        },
+        {
+          "text": "support@search.yandex.ru",
+          "kind": "email"
+        },
+        {
+          "text": "192.0.2.55",
+          "kind": "ipv4"
+        },
+        {
+          "text": "ops@example.com",
+          "kind": "email"
+        },
+        {
+          "text": "2001:db8:3600::103",
+          "kind": "ipv6"
+        }
+      ],
+      "text": "{\"level\":\"info\",\"logger\":\"http.log.access.log0\",\"msg\":\"handled request\",\"request\":{\"remote_ip\":\"203.0.113.42\",\"proto\":\"HTTP/2.0\",\"method\":\"GET\",\"host\":\"example.com\",\"uri\":\"/robots.txt\",\"headers\":{\"User-Agent\":[\"Mozilla/5.0 (compatible; DuckAssistBot/1.0; +https://duckduckgo.com/duckassistbot/)\"],\"Accept\":[\"*/*\"],\"Signature\":[\"sig1=:ReL1dPonBDX0BtgGU7AFVs4mHznWtjKX9mjrJdOKpOSNqBX1oxqKfdMwMPkQAV1+39p/5OPOK7FTOiUSMSngCQ==:\"],\"Signature-Agent\":[\"\\\"https://assistbot.duckduckgo.com\\\"\"],\"Signature-Input\":[\"sig1=(\\\"@authority\\\" \\\"signature-agent\\\");created=1788000000;keyid=\\\"poqkLGiymh_W0uP6PZFw-dvez3QJT5SGQqjpZqRzCQ4\\\";alg=\\\"ed25519\\\";tag=\\\"web-bot-auth\\\"\"]}},\"duration\":0.0044,\"size\":17563,\"status\":200}\n{\"level\":\"info\",\"logger\":\"http.log.access.log0\",\"msg\":\"handled request\",\"request\":{\"remote_ip\":\"198.51.100.7\",\"proto\":\"HTTP/1.1\",\"method\":\"GET\",\"host\":\"example.com\",\"uri\":\"/index.html\",\"headers\":{\"User-Agent\":[\"Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@anthropic.com)\"],\"X-Cloud-Trace-Context\":[\"051d576089b3d6aa2ad92d988d2cb4bc/4854938249317112270\"],\"Accept-Language\":[\"en-us,en;q=0.5\"]}},\"duration\":0.0012,\"size\":9021,\"status\":200}\n{\"level\":\"info\",\"logger\":\"http.log.access.log0\",\"msg\":\"handled request\",\"request\":{\"remote_ip\":\"203.0.113.9\",\"proto\":\"HTTP/1.1\",\"method\":\"GET\",\"host\":\"example.com\",\"uri\":\"/robots.txt\",\"headers\":{\"From\":[\"support@search.yandex.ru\"],\"User-Agent\":[\"Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)\"],\"Connection\":[\"keep-alive\"]}},\"duration\":0.0008,\"size\":412,\"status\":200}\n{\"level\":\"info\",\"logger\":\"http.log.access.log0\",\"msg\":\"handled request\",\"request\":{\"remote_ip\":\"192.0.2.55\",\"proto\":\"HTTP/1.1\",\"method\":\"GET\",\"host\":\"example.com\",\"uri\":\"/.env\",\"headers\":{\"User-Agent\":[\"siteradar/0.1 contact: ops@example.com\"],\"X-Forwarded-For\":[\"2001:db8:3600::103\"]}},\"duration\":0.0003,\"size\":0,\"status\":404}"
     }
   ]
 }

@@ -184,19 +184,33 @@ def parse_json_ish(text):
 
 
 def findings_from_json(doc, index):
-    """Any dict that names one of our files is a finding. No per-tool adapter."""
+    """Any dict that names one of our files is a finding. No per-tool adapter.
+
+    Returns (findings, unattributed). A dict that named a corpus-shaped file
+    this corpus does not contain is a finding we DROPPED, and it has to be
+    counted: a scanner pointed at a stale copy of the corpus would otherwise
+    score a silent, perfect zero. A dict that named no file at all is almost
+    always structure rather than a finding, so it is not counted here.
+    """
     dicts = []
     walk_json(doc, dicts)
     found = []
+    unattributed = []
     for d in dicts:
         base = None
+        stranger = None
         for v in d.values():
             if isinstance(v, str):
                 m = FILE_HINT.search(v)
-                if m and m.group(1) in index:
-                    base = m.group(1)
-                    break
+                if m:
+                    if m.group(1) in index:
+                        base = m.group(1)
+                        break
+                    if stranger is None:
+                        stranger = m.group(1)
         if base is None:
+            if stranger is not None:
+                unattributed.append(stranger)
             continue
         line = None
         for k in LINE_KEYS:
@@ -210,19 +224,24 @@ def findings_from_json(doc, index):
                 matched = v.strip()
                 break
         found.append({"file": base, "line": line, "match": matched})
-    return found
+    return found, unattributed
 
 
 def findings_from_text(text, index):
-    """Fallback: grep the raw output for our filenames and a nearby line number."""
+    """Fallback: grep the raw output for our filenames and a nearby line number.
+
+    Returns (findings, unattributed), on the same terms as findings_from_json.
+    """
     found = []
+    unattributed = []
     for m in re.finditer(r"(\d{3}-[a-z0-9-]+\.log)(?:[:\s,)]+(\d+))?", text):
         base = m.group(1)
         if base not in index:
+            unattributed.append(base)
             continue
         line = int(m.group(2)) if m.group(2) else None
         found.append({"file": base, "line": line, "match": ""})
-    return found
+    return found, unattributed
 
 
 def demo_findings(index):
@@ -373,14 +392,15 @@ def main():
     code, err, failed, raw = 0, "", False, ""
     if args.demo:
         found = demo_findings(scan_index)
+        unattributed = []
         source = "built-in straw-man scanner"
     else:
         raw, code, err = run(args.cmd, workdir, scan_index, args.json)
         doc = parse_json_ish(raw)
-        found = findings_from_json(doc, scan_index) if doc else []
+        found, unattributed = findings_from_json(doc, scan_index) if doc else ([], [])
         source = "json output"
         if not found:
-            found = findings_from_text(raw, scan_index)
+            found, unattributed = findings_from_text(raw, scan_index)
             source = "filenames in plain output"
         failed = code != 0
 
@@ -423,6 +443,16 @@ def main():
             "  Pass --no-control to score the run anyway.\n"
             % (CONTROL_FILE, human_list([k.replace("-", " ")
                                          for k, _ in CONTROL_SECRETS])))
+        # "reported nothing at all" is only true of THIS corpus. If the scanner
+        # named corpus-shaped files we do not have, it was reading something --
+        # a stale copy, another checkout -- and saying so names the real fault.
+        if unattributed:
+            sys.stderr.write(
+                "  it did report %d finding(s), but on %s, which this corpus\n"
+                "  does not contain: you are very likely scanning a different\n"
+                "  copy of the corpus than the one you scored.\n"
+                % (len(unattributed),
+                   human_list(sorted(set(unattributed))[:4])))
         sys.exit(2)
 
     by_section = {}
@@ -444,6 +474,8 @@ def main():
             "sections_tripped": len(by_section),
             "by_section": dict(ranked),
             "parsed_from": source,
+            "unattributed": len(unattributed),
+            "unattributed_files": sorted(set(unattributed)),
             "control": ctl,
             "findings": fps,
         }, indent=2))
@@ -453,6 +485,10 @@ def main():
             ("%d planted credentials" % len(hits + misses)) if has_secrets
             else "0 credentials"))
         print("read:   %d finding(s) via %s" % (len(found), source))
+        print("dropped: %d finding(s) naming a file this corpus does not "
+              "contain%s" % (len(unattributed),
+                             (" -- %s" % human_list(sorted(set(unattributed))[:4]))
+                             if unattributed else ""))
         if ctl:
             print("control: %s" % (
                 "reported -- the scanner demonstrably read these files"
@@ -471,9 +507,12 @@ def main():
             if misses:
                 print("")
                 print("missed:")
-                for m in (core_m + hard_m)[:args.top]:
+                shown = (core_m + hard_m)[:args.top]
+                for m in shown:
                     print("  %-34s %s%s" % (m["section"], m["kind"],
                                             "  [hard]" if m["hard"] else ""))
+                print("  (%d of %d shown; --top %d)"
+                      % (len(shown), len(core_m + hard_m), args.top))
             print("")
         print("FALSE POSITIVES: %d, across %d of %d sections"
               % (len(fps), len(by_section), len(corpus["sections"])))
@@ -483,12 +522,16 @@ def main():
             print("worst sections:")
             for name, n in ranked[:args.top]:
                 print("  %4d  %s" % (n, name))
+            print("  (%d of %d shown; --top %d)"
+                  % (min(args.top, len(ranked)), len(ranked), args.top))
             print("")
             print("examples:")
             for f in fps[:args.top]:
                 where = "%s:%s" % (f["section"], f["line"] if f["line"] else "?")
-                shown = f["match"][:56] if f["match"] else "(no matched text in output)"
-                print("  %-34s %s" % (where, shown))
+                text = f["match"][:56] if f["match"] else "(no matched text in output)"
+                print("  %-34s %s" % (where, text))
+            print("  (%d of %d shown; --top %d)"
+                  % (min(args.top, len(fps)), len(fps), args.top))
         if not found and not args.demo and not failed:
             print("")
             print("No findings parsed. Either your scanner is silent on ordinary")

@@ -1,6 +1,6 @@
 # A false-positive corpus for secret scanners
 #
-# 114 formats of ordinary log, build and CLI output. 852 non-blank lines.
+# 116 formats of ordinary log, build and CLI output. 866 non-blank lines.
 # There is no credential anywhere in this file. Not one. Every string that looks
 # like it might be is a version number, a content hash, a commit id, a placeholder
 # or a public documentation address.
@@ -14,7 +14,7 @@
 # IP addresses use the RFC 5737 documentation ranges; hostnames use example.com.
 # Some of those ARE meant to be flagged by a redactor (an IP is not a secret but
 # it is often personal data) -- see the notes at levain.bmac.io/false-positives.html
-# for the 47 spans the tool that found them still flags, and why each is deliberate.
+# for the 57 spans the tool that found them still flags, and why each is deliberate.
 #
 # MIT licensed. Copy it, extend it, vendor it into your own test suite.
 # Source: https://levain.bmac.io/fp-corpus.txt
@@ -22,6 +22,19 @@
 #
 # Format: each section starts with a ===== name ===== line. Everything after it,
 # until the next such line, is verbatim output.
+
+===== gpg public keyring =====
+$ gpg --recv-keys 9A4F2C81D3E70B65
+gpg: key 9A4F2C81D3E70B65: public key "Release Signing" imported
+$ gpg --export --armor 9A4F2C81D3E70B65
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQENBGX1abcdAREACwq3kJ8mNvR5tYuIoPqAsDfGhJkLzXcVbNm2QwErTyUiOpAs
+dFgHjKlZxCvBnM1QwErTyUiOpAsdFgHjKlZxCvBnM2QwErTyUiOpAsdFgHjKlZxC
+=Ab3F
+-----END PGP PUBLIC KEY BLOCK-----
+$ gpg --verify release.tar.gz.sig release.tar.gz
+gpg: Good signature from "Release Signing <build@example.com>" [ultimate]
 
 ===== nginx access =====
 203.0.113.42 - - [27/Aug/2026:09:14:02 +0000] "GET /api/v2/users?page=3 HTTP/1.1" 200 4213 "https://example.com/dash" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -1111,3 +1124,9 @@ paths:
     }
   ]
 }
+
+===== signed bot traffic access log =====
+{"level":"info","logger":"http.log.access.log0","msg":"handled request","request":{"remote_ip":"203.0.113.42","proto":"HTTP/2.0","method":"GET","host":"example.com","uri":"/robots.txt","headers":{"User-Agent":["Mozilla/5.0 (compatible; DuckAssistBot/1.0; +https://duckduckgo.com/duckassistbot/)"],"Accept":["*/*"],"Signature":["sig1=:ReL1dPonBDX0BtgGU7AFVs4mHznWtjKX9mjrJdOKpOSNqBX1oxqKfdMwMPkQAV1+39p/5OPOK7FTOiUSMSngCQ==:"],"Signature-Agent":["\"https://assistbot.duckduckgo.com\""],"Signature-Input":["sig1=(\"@authority\" \"signature-agent\");created=1788000000;keyid=\"poqkLGiymh_W0uP6PZFw-dvez3QJT5SGQqjpZqRzCQ4\";alg=\"ed25519\";tag=\"web-bot-auth\""]}},"duration":0.0044,"size":17563,"status":200}
+{"level":"info","logger":"http.log.access.log0","msg":"handled request","request":{"remote_ip":"198.51.100.7","proto":"HTTP/1.1","method":"GET","host":"example.com","uri":"/index.html","headers":{"User-Agent":["Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@anthropic.com)"],"X-Cloud-Trace-Context":["051d576089b3d6aa2ad92d988d2cb4bc/4854938249317112270"],"Accept-Language":["en-us,en;q=0.5"]}},"duration":0.0012,"size":9021,"status":200}
+{"level":"info","logger":"http.log.access.log0","msg":"handled request","request":{"remote_ip":"203.0.113.9","proto":"HTTP/1.1","method":"GET","host":"example.com","uri":"/robots.txt","headers":{"From":["support@search.yandex.ru"],"User-Agent":["Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)"],"Connection":["keep-alive"]}},"duration":0.0008,"size":412,"status":200}
+{"level":"info","logger":"http.log.access.log0","msg":"handled request","request":{"remote_ip":"192.0.2.55","proto":"HTTP/1.1","method":"GET","host":"example.com","uri":"/.env","headers":{"User-Agent":["siteradar/0.1 contact: ops@example.com"],"X-Forwarded-For":["2001:db8:3600::103"]}},"duration":0.0003,"size":0,"status":404}
